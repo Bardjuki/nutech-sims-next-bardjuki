@@ -1,8 +1,13 @@
 'use client';
 
 import { useState, FormEvent, ChangeEvent, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useAppDispatch, useAppSelector } from '@/lib/hooks/reduxHooks';
+import { clearError, login } from '@/lib/features/auth/authSlice';
+// import { useAppDispatch, useAppSelector } from '@/store/hooks';
+// import { login, clearError } from '@/store/authSlice';
 
 interface FormErrors {
   email?: string;
@@ -10,6 +15,12 @@ interface FormErrors {
 }
 
 export default function LoginPageComponent(): React.JSX.Element {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  
+  // Get loading and error state from Redux
+  const { isLoading, error: authError } = useAppSelector((state) => state.auth);
+  
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -41,8 +52,13 @@ export default function LoginPageComponent(): React.JSX.Element {
     }
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
+
+    // Clear any previous auth errors
+    if (authError) {
+      dispatch(clearError());
+    }
 
     const newErrors: FormErrors = {
       email: validateEmail(email),
@@ -61,9 +77,16 @@ export default function LoginPageComponent(): React.JSX.Element {
       return;
     }
 
-    // If no errors, submit form
-    console.log('Login:', { email, password });
-    // Handle login logic here
+    // If no validation errors, attempt login
+    try {
+      const result = await dispatch(login({ email, password })).unwrap();
+      
+      // Login successful, redirect to home
+      router.push('/');
+    } catch (error) {
+      // Error is handled by Redux and shown in UI
+      console.error('Login failed:', error);
+    }
   };
 
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -72,6 +95,9 @@ export default function LoginPageComponent(): React.JSX.Element {
     if (errors.email) {
       setErrors((prev) => ({ ...prev, email: undefined }));
     }
+    if (authError) {
+      dispatch(clearError());
+    }
   };
 
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -79,6 +105,9 @@ export default function LoginPageComponent(): React.JSX.Element {
     // Clear error when user types
     if (errors.password) {
       setErrors((prev) => ({ ...prev, password: undefined }));
+    }
+    if (authError) {
+      dispatch(clearError());
     }
   };
 
@@ -108,6 +137,13 @@ export default function LoginPageComponent(): React.JSX.Element {
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* API Error Message */}
+            {authError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+                {authError}
+              </div>
+            )}
+
             {/* Email Input */}
             <div ref={emailRef}>
               <div className="relative">
@@ -123,7 +159,8 @@ export default function LoginPageComponent(): React.JSX.Element {
                   placeholder="masukan email anda"
                   value={email}
                   onChange={handleEmailChange}
-                  className={`w-full pl-12 pr-4 py-3 border text-black rounded-md focus:outline-none focus:ring-2 ${
+                  disabled={isLoading}
+                  className={`w-full pl-12 pr-4 py-3 border text-black rounded-md focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     errors.email
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
@@ -150,7 +187,8 @@ export default function LoginPageComponent(): React.JSX.Element {
                   placeholder="masukan password anda"
                   value={password}
                   onChange={handlePasswordChange}
-                  className={`w-full pl-12 pr-12 py-3 border text-black rounded-md focus:outline-none focus:ring-2 ${
+                  disabled={isLoading}
+                  className={`w-full pl-12 pr-12 py-3 border text-black rounded-md focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     errors.password
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
@@ -159,7 +197,8 @@ export default function LoginPageComponent(): React.JSX.Element {
                 <button
                   type="button"
                   onClick={togglePasswordVisibility}
-                  className={`absolute right-4 top-1/2 -translate-y-1/2 ${
+                  disabled={isLoading}
+                  className={`absolute right-4 top-1/2 -translate-y-1/2 disabled:opacity-50 ${
                     errors.password
                       ? 'text-red-600'
                       : 'text-gray-400 hover:text-gray-600'
@@ -176,9 +215,10 @@ export default function LoginPageComponent(): React.JSX.Element {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-red-600 text-white py-3 rounded-md font-semibold hover:bg-red-700 transition-colors"
+              disabled={isLoading}
+              className="w-full bg-red-600 text-white py-3 rounded-md font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Masuk
+              {isLoading ? 'Memproses...' : 'Masuk'}
             </button>
           </form>
 

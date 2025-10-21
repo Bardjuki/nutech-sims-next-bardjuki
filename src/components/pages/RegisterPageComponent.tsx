@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, FormEvent, ChangeEvent, useRef } from 'react';
+import { useState, FormEvent, ChangeEvent, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAppDispatch, useAppSelector } from '@/lib/hooks/reduxHooks';
+import { register, clearMessages } from '@/lib/features/auth/authSlice';
 
 interface FormData {
   email: string;
@@ -21,6 +24,12 @@ interface FormErrors {
 }
 
 export default function RegisterPageComponent(): React.JSX.Element {
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  
+  // Get auth state from Redux
+  const { isLoading, error, successMessage } = useAppSelector((state) => state.auth);
+  
   const [formData, setFormData] = useState<FormData>({
     email: '',
     firstName: '',
@@ -39,6 +48,26 @@ export default function RegisterPageComponent(): React.JSX.Element {
   const lastNameRef = useRef<HTMLDivElement>(null);
   const passwordRef = useRef<HTMLDivElement>(null);
   const confirmPasswordRef = useRef<HTMLDivElement>(null);
+
+  // Clear messages on component mount and unmount
+  useEffect(() => {
+    dispatch(clearMessages());
+    
+    return () => {
+      dispatch(clearMessages());
+    };
+  }, [dispatch]);
+
+  // Redirect to login after successful registration
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        router.push('/auth/login');
+      }, 2000); // Redirect after 2 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, router]);
 
   const validateEmail = (email: string): string | undefined => {
     if (!email) return 'Email harus diisi';
@@ -84,6 +113,11 @@ export default function RegisterPageComponent(): React.JSX.Element {
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
+    
+    // Clear Redux error when user types
+    if (error) {
+      dispatch(clearMessages());
+    }
   };
 
   const scrollToError = (fieldRef: React.RefObject<HTMLDivElement | null>): void => {
@@ -95,7 +129,7 @@ export default function RegisterPageComponent(): React.JSX.Element {
     }
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
     const newErrors: FormErrors = {
@@ -133,9 +167,22 @@ export default function RegisterPageComponent(): React.JSX.Element {
       return;
     }
 
-    // If no errors, submit form
-    console.log('Form submitted:', formData);
-    // Handle registration logic here
+    // If no validation errors, attempt registration
+    try {
+      await dispatch(
+        register({
+          email: formData.email,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          password: formData.password,
+        })
+      ).unwrap();
+      
+      // Success is handled by useEffect above
+    } catch (error) {
+      // Error is handled by Redux and shown in UI
+      console.error('Registration failed:', error);
+    }
   };
 
   return (
@@ -158,6 +205,27 @@ export default function RegisterPageComponent(): React.JSX.Element {
             membuat akun
           </h1>
 
+          {/* Success Message */}
+          {successMessage && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-green-800 text-sm text-center font-medium">
+                ✓ {successMessage}
+              </p>
+              <p className="text-green-600 text-xs text-center mt-1">
+                Mengalihkan ke halaman login...
+              </p>
+            </div>
+          )}
+
+          {/* Error Message from API */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-800 text-sm text-center font-medium">
+                ✕ {error}
+              </p>
+            </div>
+          )}
+
           {/* Register Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email Input */}
@@ -175,7 +243,8 @@ export default function RegisterPageComponent(): React.JSX.Element {
                   placeholder="masukan email anda"
                   value={formData.email}
                   onChange={handleInputChange('email')}
-                  className={`w-full pl-12 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 ${
+                  disabled={isLoading}
+                  className={`w-full pl-12 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${
                     errors.email
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
@@ -202,7 +271,8 @@ export default function RegisterPageComponent(): React.JSX.Element {
                   placeholder="nama depan"
                   value={formData.firstName}
                   onChange={handleInputChange('firstName')}
-                  className={`w-full pl-12 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 ${
+                  disabled={isLoading}
+                  className={`w-full pl-12 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${
                     errors.firstName
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
@@ -229,7 +299,8 @@ export default function RegisterPageComponent(): React.JSX.Element {
                   placeholder="nama belakang"
                   value={formData.lastName}
                   onChange={handleInputChange('lastName')}
-                  className={`w-full pl-12 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 ${
+                  disabled={isLoading}
+                  className={`w-full pl-12 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${
                     errors.lastName
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
@@ -256,7 +327,8 @@ export default function RegisterPageComponent(): React.JSX.Element {
                   placeholder="buat password"
                   value={formData.password}
                   onChange={handleInputChange('password')}
-                  className={`w-full pl-12 pr-12 py-3 border rounded-md focus:outline-none focus:ring-2 ${
+                  disabled={isLoading}
+                  className={`w-full pl-12 pr-12 py-3 border rounded-md focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${
                     errors.password
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
@@ -265,7 +337,8 @@ export default function RegisterPageComponent(): React.JSX.Element {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute right-4 top-1/2 -translate-y-1/2 ${
+                  disabled={isLoading}
+                  className={`absolute right-4 top-1/2 -translate-y-1/2 disabled:cursor-not-allowed ${
                     errors.password
                       ? 'text-red-600'
                       : 'text-gray-400 hover:text-gray-600'
@@ -294,7 +367,8 @@ export default function RegisterPageComponent(): React.JSX.Element {
                   placeholder="konfirmasi password"
                   value={formData.confirmPassword}
                   onChange={handleInputChange('confirmPassword')}
-                  className={`w-full pl-12 pr-12 py-3 border rounded-md focus:outline-none focus:ring-2 ${
+                  disabled={isLoading}
+                  className={`w-full pl-12 pr-12 py-3 border rounded-md focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${
                     errors.confirmPassword
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
@@ -303,7 +377,8 @@ export default function RegisterPageComponent(): React.JSX.Element {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className={`absolute right-4 top-1/2 -translate-y-1/2 ${
+                  disabled={isLoading}
+                  className={`absolute right-4 top-1/2 -translate-y-1/2 disabled:cursor-not-allowed ${
                     errors.confirmPassword
                       ? 'text-red-600'
                       : 'text-gray-400 hover:text-gray-600'
@@ -322,9 +397,36 @@ export default function RegisterPageComponent(): React.JSX.Element {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-red-600 text-white py-3 rounded-md font-semibold hover:bg-red-700 transition-colors"
+              disabled={isLoading}
+              className="w-full bg-red-600 text-white py-3 rounded-md font-semibold hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Registrasi
+              {isLoading ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Memproses...
+                </>
+              ) : (
+                'Registrasi'
+              )}
             </button>
           </form>
 
