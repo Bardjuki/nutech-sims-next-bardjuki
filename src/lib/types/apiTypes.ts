@@ -11,8 +11,6 @@ export interface LoginRequest {
   password: string;
 }
 
-
-
 export interface RegisterRequest {
   email: string;
   first_name: string;
@@ -68,6 +66,15 @@ export interface TransactionRequest {
   service_code: string;
 }
 
+export interface ApiError {
+  response?: {
+    data?: ApiResponse;
+    status?: number;
+    statusText?: string;
+  };
+  message?: string;
+}
+
 export interface Transaction {
   invoice_number: string;
   service_code: string;
@@ -96,4 +103,20 @@ export interface TopUpRequest {
 
 export interface TopUpResponse {
   balance: number;
+}
+
+export interface TransactionState {
+  balance: Balance | null;
+  transactions: Transaction[];
+  currentTransaction: Transaction | null;
+  topUpResult: TopUpResponse | null;
+  offset: number;
+  limit: number;
+  hasMore: boolean;
+  isLoadingBalance: boolean;
+  isLoadingTransactions: boolean;
+  isCreatingTransaction: boolean;
+  isTopingUp: boolean;
+  error: string | null;
+  successMessage: string | null;
 }

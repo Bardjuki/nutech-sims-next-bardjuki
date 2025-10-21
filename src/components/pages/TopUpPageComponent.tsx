@@ -1,21 +1,21 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { Eye, EyeOff, Wallet, CreditCard, X, Check } from 'lucide-react';
+import { useState, useEffect, ChangeEvent } from 'react';
+import { Wallet, CreditCard, X, Check } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks/reduxHooks';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/lib/config/reduxStore';
 import { topUpBalance } from '@/lib/features/transaction/transactionSlice';
 import ProfileBalanceCard from '../ui/cards/ProfileBalanceCard';
+import { formatCurrency } from '@/lib/utils/numberUtils';
+import { useRouter } from 'next/navigation';
 
 const TopUpPageComponent = () => {
   const dispatch = useAppDispatch();
   const {  isTopingUp, topUpResult, successMessage, error } = useAppSelector(
     (state) => state.transaction
   );
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState(''); // 'success', 'error', 'confirm'
-
+  const [modalType, setModalType] = useState('');
+  const router = useRouter();
   const quickAmounts = [10000, 20000, 50000, 100000, 250000, 500000];
 
  
@@ -25,9 +25,7 @@ const TopUpPageComponent = () => {
       setModalType('success');
       setShowModal(true);
       setAmount('');
-      // Clear success message after showing
       setTimeout(() => {
-        // dispatch(clearSuccessMessage());
       }, 3000);
     }
   }, [successMessage]);
@@ -36,25 +34,22 @@ const TopUpPageComponent = () => {
     if (error) {
       setModalType('error');
       setShowModal(true);
-      // Clear error message after showing
       setTimeout(() => {
-        // dispatch(clearError());
       }, 3000);
     }
   }, [error]);
 
-  const handleAmountChange = (e) => {
+  const handleAmountChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const value = e.target.value.replace(/\D/g, '');
     setAmount(value);
   };
 
-  const handleQuickAmount = (value) => {
+  const handleQuickAmount = (value : number) => {
     setAmount(value.toString());
   };
 
   const handleTopUpClick = () => {
     if (!amount || parseInt(amount) < 10000) {
-      // Show error
       return;
     }
     setModalType('confirm');
@@ -69,7 +64,6 @@ const TopUpPageComponent = () => {
     
     try {
       await dispatch(topUpBalance(topUpData)).unwrap();
-      // Simulate success
       setTimeout(() => {
         setModalType('success');
         setShowModal(true);
@@ -83,17 +77,8 @@ const TopUpPageComponent = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     if (modalType === 'success') {
-      // Navigate back to home
-      // router.push('/');
+      router.push('/');
     }
-  };
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(value);
   };
 
   return (
@@ -106,7 +91,6 @@ const TopUpPageComponent = () => {
               <p className="text-sm text-gray-600 mb-2">Silahkan masukan</p>
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Nominal Top Up</h2>
 
-              {/* Amount Input */}
               <div className="space-y-4">
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
@@ -121,7 +105,6 @@ const TopUpPageComponent = () => {
                   />
                 </div>
 
-                {/* Top Up Button */}
                 <button
                   onClick={handleTopUpClick}
                   disabled={!amount || parseInt(amount) < 10000 || isTopingUp}
@@ -150,7 +133,6 @@ const TopUpPageComponent = () => {
         </div>
       </main>
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black-100 bg-opacity-5 flex items-center justify-center p-4 z-50" onClick={handleCloseModal}>
           <div className="bg-white rounded-lg p-6 max-w-sm w-full text-center" onClick={(e) => e.stopPropagation()}>
@@ -184,7 +166,7 @@ const TopUpPageComponent = () => {
                   <Check size={32} className="text-white" />
                 </div>
                 <p className="text-sm text-gray-600 mb-2">Top Up sebesar</p>
-                <p className="text-2xl font-bold mb-2">{formatCurrency(parseInt(topUpResult?.balance || amount))}</p>
+                <p className="text-2xl font-bold mb-2">{formatCurrency(Number(topUpResult?.balance ?? amount ?? 0))}</p>
                 <p className="text-sm text-gray-600 mb-6">berhasil!</p>
                 <button
                   onClick={handleCloseModal}

@@ -8,23 +8,11 @@ import {
   TopUpRequest,
   TopUpResponse,
   TransactionRequest,
+  ApiError,
+  TransactionState,
 } from '@/lib/types/apiTypes';
 
-interface TransactionState {
-  balance: Balance | null;
-  transactions: Transaction[];
-  currentTransaction: Transaction | null;
-  topUpResult: TopUpResponse | null;
-  offset: number;
-  limit: number;
-  hasMore: boolean;
-  isLoadingBalance: boolean;
-  isLoadingTransactions: boolean;
-  isCreatingTransaction: boolean;
-  isTopingUp: boolean;
-  error: string | null;
-  successMessage: string | null;
-}
+
 
 const initialState: TransactionState = {
   balance: null,
@@ -58,9 +46,10 @@ export const fetchBalance = createAsyncThunk<
       } else {
         return rejectWithValue(response.message || 'Failed to fetch balance');
       }
-    } catch (error: any) {
+    } catch (error) {
+       const apiError = error as ApiError;
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch balance'
+        apiError.response?.data?.message || 'Failed to fetch balance'
       );
     }
   }
@@ -82,15 +71,15 @@ export const createTransaction = createAsyncThunk<
       } else {
         return rejectWithValue(response.message || 'Transaction failed');
       }
-    } catch (error: any) {
+    } catch (error) {
+       const apiError = error as ApiError;
       return rejectWithValue(
-        error.response?.data?.message || 'Transaction failed'
+        apiError.response?.data?.message || 'Transaction failed'
       );
     }
   }
 );
 
-// Fetch transaction history
 export const fetchTransactionHistory = createAsyncThunk<
   TransactionHistoryResponse,
   TransactionHistoryParams | undefined,
@@ -108,15 +97,15 @@ export const fetchTransactionHistory = createAsyncThunk<
           response.message || 'Failed to fetch transaction history'
         );
       }
-    } catch (error: any) {
+    } catch (error) {
+       const apiError = error as ApiError;
       return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch transaction history'
+        apiError.response?.data?.message  || 'Failed to fetch transaction history'
       );
     }
   }
 );
 
-// Top up balance
 export const topUpBalance = createAsyncThunk<
   TopUpResponse,
   TopUpRequest,
@@ -128,15 +117,15 @@ export const topUpBalance = createAsyncThunk<
       const response = await transactionApi.topUp(data);
 
       if (response.status === 0) {
-        // Refresh balance after successful top up
         dispatch(fetchBalance());
         return response.data!;
       } else {
         return rejectWithValue(response.message || 'Top up failed');
       }
-    } catch (error: any) {
+    } catch (error) {
+       const apiError = error as ApiError;
       return rejectWithValue(
-        error.response?.data?.message || 'Top up failed'
+        apiError.response?.data?.message || 'Top up failed'
       );
     }
   }
@@ -169,7 +158,6 @@ const transactionSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Fetch Balance
     builder
       .addCase(fetchBalance.pending, (state) => {
         state.isLoadingBalance = true;
@@ -185,7 +173,6 @@ const transactionSlice = createSlice({
         state.error = action.payload || 'Failed to fetch balance';
       });
 
-    // Create Transaction
     builder
       .addCase(createTransaction.pending, (state) => {
         state.isCreatingTransaction = true;
@@ -197,7 +184,6 @@ const transactionSlice = createSlice({
         state.currentTransaction = action.payload;
         state.successMessage = 'Transaksi berhasil';
         state.error = null;
-        // Add new transaction to the beginning of the list
         state.transactions.unshift(action.payload);
       })
       .addCase(createTransaction.rejected, (state, action) => {
@@ -206,7 +192,6 @@ const transactionSlice = createSlice({
         state.successMessage = null;
       });
 
-    // Fetch Transaction History
     builder
       .addCase(fetchTransactionHistory.pending, (state) => {
         state.isLoadingTransactions = true;
@@ -233,7 +218,6 @@ const transactionSlice = createSlice({
         state.error = action.payload || 'Failed to fetch transaction history';
       });
 
-    // Top Up Balance
     builder
       .addCase(topUpBalance.pending, (state) => {
         state.isTopingUp = true;

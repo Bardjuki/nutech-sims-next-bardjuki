@@ -36,16 +36,6 @@ export default function PaymentPageComponent({ serviceCode }: PaymentPageCompone
   const { services, isLoadingServices } = useAppSelector((state) => state.module);
 
   useEffect(() => {
-    dispatch(fetchBalance());
-    dispatch(fetchServices());
-
-    return () => {
-      dispatch(clearMessages());
-      dispatch(clearCurrentTransaction());
-    };
-  }, [dispatch]);
-
-  useEffect(() => {
     // Find service by service_code from Redux store
     if (services.length > 0) {
       const foundService = services.find(

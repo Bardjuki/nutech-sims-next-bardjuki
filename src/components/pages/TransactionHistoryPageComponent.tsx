@@ -18,7 +18,6 @@ export default function TransactionHistoryPageComponent() {
   } = useAppSelector((state) => state.transaction);
 
   useEffect(() => {
-    dispatch(fetchBalance());
     dispatch(resetTransactions());
     dispatch(fetchTransactionHistory({ offset: 0, limit: 5 }));
   }, [dispatch]);

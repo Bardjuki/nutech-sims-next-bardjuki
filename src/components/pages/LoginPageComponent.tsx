@@ -6,8 +6,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks/reduxHooks';
 import { clearError, login } from '@/lib/features/auth/authSlice';
-// import { useAppDispatch, useAppSelector } from '@/store/hooks';
-// import { login, clearError } from '@/store/authSlice';
 
 interface FormErrors {
   email?: string;
