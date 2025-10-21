@@ -52,9 +52,6 @@ apiClient.interceptors.response.use(
       if (status === 401) {
         // Unauthorized - clear token
         authToken = null;
-        if (typeof window !== 'undefined') {
-          window.location.href = '/auth/login';
-        }
       } else if (status === 403) {
         console.error('Forbidden: You do not have permission');
       } else if (status === 500) {

@@ -1,13 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../features/auth/authSlice';
-import paymentReducer from '../features/payment/paymentSlice';
 import transactionReducer from '../features/transaction/transactionSlice';
+import moduleReducer from '../features/module/moduleSlice';
 export const makeStore = () => {
   return configureStore({
     reducer: {
       auth: authReducer,
-      payment: paymentReducer,
       transaction: transactionReducer,
+      module: moduleReducer,
     },
   });
 };

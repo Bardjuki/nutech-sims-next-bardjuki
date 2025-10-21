@@ -1,3 +1,4 @@
+import { setAuthToken } from '@/lib/api/apiClient';
 import { memberApi } from './../../api/member';
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
@@ -42,6 +43,7 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isUpdatingProfile: boolean;
   error: string | null;
   successMessage: string | null;
 }
@@ -51,6 +53,7 @@ const initialState: AuthState = {
   token: null,
   isLoading: false,
   isAuthenticated: false,
+  isUpdatingProfile: false,
   error: null,
   successMessage: null,
 };
@@ -67,14 +70,15 @@ export const login = createAsyncThunk<
       const response = await memberApi.login(credentials);
 
       if (response.status === 0) {
-        // Store token in localStorage
         if (typeof window !== 'undefined' && response.data?.token) {
           localStorage.setItem('token', response.data.token);
         }
-
-        // Get user profile after successful login
+        setAuthToken(response.data?.token);
+        
+        // Fetch user profile
         const profileResponse = await memberApi.getProfile();
 
+        // Return both token and user
         return {
           token: response.data?.token || '',
           user: profileResponse.data,
@@ -123,18 +127,15 @@ export const register = createAsyncThunk<
         password: userData.password,
       });
 
-      // Check if registration was successful (status 0)
       if (response.status === 0) {
         return response;
       } else {
-        // Handle API errors with specific status codes
         return rejectWithValue({
           status: response.status,
           message: response.message || 'Registration failed',
         });
       }
     } catch (error) {
-      // Handle network errors or unexpected errors
       if (error instanceof Error) {
         const axiosError = error as {
           response?: {
@@ -165,11 +166,84 @@ export const register = createAsyncThunk<
   }
 );
 
+// Update profile async thunk
+export const updateProfile = createAsyncThunk<
+  User,
+  { first_name: string; last_name: string },
+  { rejectValue: string }
+>(
+  'auth/updateProfile',
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await memberApi.updateProfile(data);
+
+      if (response.status === 0) {
+        return response.data;
+      } else {
+        return rejectWithValue(response.message || 'Failed to update profile');
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        const axiosError = error as {
+          response?: {
+            data?: {
+              message?: string;
+            };
+          };
+          message?: string;
+        };
+
+        return rejectWithValue(
+          axiosError.response?.data?.message || 'Failed to update profile'
+        );
+      }
+      return rejectWithValue('An unexpected error occurred');
+    }
+  }
+);
+
+// Update profile image async thunk
+export const updateProfileImage = createAsyncThunk<
+  User,
+  File,
+  { rejectValue: string }
+>(
+  'auth/updateProfileImage',
+  async (imageFile, { rejectWithValue }) => {
+    try {
+      const response = await memberApi.updateProfileImage(imageFile);
+
+      if (response.status === 0) {
+        return response.data;
+      } else {
+        return rejectWithValue(response.message || 'Failed to update profile image');
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        const axiosError = error as {
+          response?: {
+            data?: {
+              message?: string;
+            };
+          };
+          message?: string;
+        };
+
+        return rejectWithValue(
+          axiosError.response?.data?.message || 'Failed to update profile image'
+        );
+      }
+      return rejectWithValue('An unexpected error occurred');
+    }
+  }
+);
+
 // Logout async thunk
 export const logoutAsync = createAsyncThunk('auth/logout', async () => {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('token');
   }
+  setAuthToken(null); // Clear the auth token
   return null;
 });
 
@@ -191,18 +265,21 @@ export const checkAuth = createAsyncThunk<
         return rejectWithValue('No token found');
       }
 
+      setAuthToken(token); // Set token before making request
       const response = await memberApi.getProfile();
 
       if (response.status === 0) {
         return { user: response.data, token };
       } else {
         localStorage.removeItem('token');
+        setAuthToken(null);
         return rejectWithValue('Invalid token');
       }
     } catch (error) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
       }
+      setAuthToken(null);
       return rejectWithValue('Authentication check failed');
     }
   }
@@ -228,6 +305,10 @@ const authSlice = createSlice({
       state.successMessage = null;
     },
     logout: (state) => {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
+      setAuthToken(null);
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
@@ -271,11 +352,9 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.successMessage = null;
         
-        // Handle different error types
         if (action.payload) {
           const { status, message } = action.payload;
           
-          // Map specific error codes to user-friendly messages
           switch (status) {
             case 102:
               state.error = message || 'Format email tidak sesuai';
@@ -292,6 +371,44 @@ const authSlice = createSlice({
         } else {
           state.error = 'Terjadi kesalahan. Silakan coba lagi.';
         }
+      });
+
+    // Update Profile
+    builder
+      .addCase(updateProfile.pending, (state) => {
+        state.isUpdatingProfile = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.isUpdatingProfile = false;
+        state.user = action.payload;
+        state.successMessage = 'Profile berhasil diperbarui';
+        state.error = null;
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.isUpdatingProfile = false;
+        state.error = action.payload || 'Gagal memperbarui profile';
+        state.successMessage = null;
+      });
+
+    // Update Profile Image
+    builder
+      .addCase(updateProfileImage.pending, (state) => {
+        state.isUpdatingProfile = true;
+        state.error = null;
+        state.successMessage = null;
+      })
+      .addCase(updateProfileImage.fulfilled, (state, action) => {
+        state.isUpdatingProfile = false;
+        state.user = action.payload;
+        state.successMessage = 'Foto profile berhasil diperbarui';
+        state.error = null;
+      })
+      .addCase(updateProfileImage.rejected, (state, action) => {
+        state.isUpdatingProfile = false;
+        state.error = action.payload || 'Gagal memperbarui foto profile';
+        state.successMessage = null;
       });
 
     // Logout

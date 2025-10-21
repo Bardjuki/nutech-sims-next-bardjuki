@@ -7,9 +7,9 @@ export default function Navbar(): React.JSX.Element {
   const pathname = usePathname();
 
   const navLinks = [
-    { href: '/top-up', label: 'Top Up' },
-    { href: '/transaction', label: 'Transaction' },
-    { href: '/akun', label: 'Akun' },
+    { href: '/payment/top-up', label: 'Top Up' },
+    { href: '/payment/transaction', label: 'Transaction' },
+    { href: '/profile/account', label: 'Akun' },
   ];
 
   return (

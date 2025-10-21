@@ -11,6 +11,8 @@ export interface LoginRequest {
   password: string;
 }
 
+
+
 export interface RegisterRequest {
   email: string;
   first_name: string;
@@ -71,6 +73,7 @@ export interface Transaction {
   service_code: string;
   service_name: string;
   transaction_type: string;
+description: string,
   total_amount: number;
   created_on: string;
 }

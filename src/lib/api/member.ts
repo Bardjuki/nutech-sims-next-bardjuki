@@ -20,6 +20,7 @@ export const memberApi = {
       '/login',
       credentials
     );
+        
     return response.data;
   },
 
@@ -35,11 +36,6 @@ export const memberApi = {
     return response.data;
   },
 
-  /**
-   * Get user profile
-   * GET /profile
-   * Requires: Authorization header with Bearer token
-   */
   getProfile: async (): Promise<ApiResponse<UserProfile>> => {
     const response = await apiClient.get<ApiResponse<UserProfile>>('/profile');
     return response.data;
