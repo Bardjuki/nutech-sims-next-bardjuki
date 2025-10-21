@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Transaction } from '@/lib/types/apiTypes';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks/reduxHooks';
-import { fetchBalance, fetchTransactionHistory, resetTransactions } from '@/lib/features/transaction/transactionSlice';
+import {  fetchTransactionHistory, resetTransactions } from '@/lib/features/transaction/transactionSlice';
 import { formatCurrency } from '@/lib/utils/numberUtils';
 import { formatDate } from '@/lib/utils/dateUtils';
 import ProfileBalanceCard from '../ui/cards/ProfileBalanceCard';

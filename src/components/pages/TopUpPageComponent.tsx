@@ -19,7 +19,6 @@ const TopUpPageComponent = () => {
   const quickAmounts = [10000, 20000, 50000, 100000, 250000, 500000];
 
  
-
   useEffect(() => {
     if (successMessage) {
       setModalType('success');

@@ -12,8 +12,6 @@ import {
   TransactionState,
 } from '@/lib/types/apiTypes';
 
-
-
 const initialState: TransactionState = {
   balance: null,
   transactions: [],
@@ -35,50 +33,44 @@ export const fetchBalance = createAsyncThunk<
   Balance,
   void,
   { rejectValue: string }
->(
-  'transaction/fetchBalance',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await transactionApi.getBalance();
+>('transaction/fetchBalance', async (_, { rejectWithValue }) => {
+  try {
+    const response = await transactionApi.getBalance();
 
-      if (response.status === 0) {
-        return response.data!;
-      } else {
-        return rejectWithValue(response.message || 'Failed to fetch balance');
-      }
-    } catch (error) {
-       const apiError = error as ApiError;
-      return rejectWithValue(
-        apiError.response?.data?.message || 'Failed to fetch balance'
-      );
+    if (response.status === 0) {
+      return response.data!;
+    } else {
+      return rejectWithValue(response.message || 'Failed to fetch balance');
     }
+  } catch (error) {
+    const apiError = error as ApiError;
+    return rejectWithValue(
+      apiError.response?.data?.message || 'Failed to fetch balance'
+    );
   }
-);
+});
 
 // Create transaction
 export const createTransaction = createAsyncThunk<
   Transaction,
   TransactionRequest,
   { rejectValue: string }
->(
-  'transaction/createTransaction',
-  async (data, { rejectWithValue }) => {
-    try {
-      const response = await transactionApi.createTransaction(data);
+>('transaction/createTransaction', async (data, { rejectWithValue }) => {
+  try {
+    const response = await transactionApi.createTransaction(data);
 
-      if (response.status === 0) {
-        return response.data!;
-      } else {
-        return rejectWithValue(response.message || 'Transaction failed');
-      }
-    } catch (error) {
-       const apiError = error as ApiError;
-      return rejectWithValue(
-        apiError.response?.data?.message || 'Transaction failed'
-      );
+    if (response.status === 0) {
+      return response.data!;
+    } else {
+      return rejectWithValue(response.message || 'Transaction failed');
     }
+  } catch (error) {
+    const apiError = error as ApiError;
+    return rejectWithValue(
+      apiError.response?.data?.message || 'Transaction failed'
+    );
   }
-);
+});
 
 export const fetchTransactionHistory = createAsyncThunk<
   TransactionHistoryResponse,
@@ -89,7 +81,7 @@ export const fetchTransactionHistory = createAsyncThunk<
   async (params, { rejectWithValue }) => {
     try {
       const response = await transactionApi.getTransactionHistory(params);
-
+      console.log(response, 'resonse');
       if (response.status === 0) {
         return response.data!;
       } else {
@@ -98,9 +90,10 @@ export const fetchTransactionHistory = createAsyncThunk<
         );
       }
     } catch (error) {
-       const apiError = error as ApiError;
+      const apiError = error as ApiError;
       return rejectWithValue(
-        apiError.response?.data?.message  || 'Failed to fetch transaction history'
+        apiError.response?.data?.message ||
+          'Failed to fetch transaction history'
       );
     }
   }
@@ -110,26 +103,21 @@ export const topUpBalance = createAsyncThunk<
   TopUpResponse,
   TopUpRequest,
   { rejectValue: string }
->(
-  'transaction/topUpBalance',
-  async (data, { rejectWithValue, dispatch }) => {
-    try {
-      const response = await transactionApi.topUp(data);
+>('transaction/topUpBalance', async (data, { rejectWithValue, dispatch }) => {
+  try {
+    const response = await transactionApi.topUp(data);
 
-      if (response.status === 0) {
-        dispatch(fetchBalance());
-        return response.data!;
-      } else {
-        return rejectWithValue(response.message || 'Top up failed');
-      }
-    } catch (error) {
-       const apiError = error as ApiError;
-      return rejectWithValue(
-        apiError.response?.data?.message || 'Top up failed'
-      );
+    if (response.status === 0) {
+      dispatch(fetchBalance());
+      return response.data!;
+    } else {
+      return rejectWithValue(response.message || 'Top up failed');
     }
+  } catch (error) {
+    const apiError = error as ApiError;
+    return rejectWithValue(apiError.response?.data?.message || 'Top up failed');
   }
-);
+});
 
 const transactionSlice = createSlice({
   name: 'transaction',
@@ -184,7 +172,13 @@ const transactionSlice = createSlice({
         state.currentTransaction = action.payload;
         state.successMessage = 'Transaksi berhasil';
         state.error = null;
-        state.transactions.unshift(action.payload);
+
+        const exists = state.transactions.some(
+          (t) => t.invoice_number === action.payload.invoice_number
+        );
+        if (!exists) {
+          state.transactions.unshift(action.payload);
+        }
       })
       .addCase(createTransaction.rejected, (state, action) => {
         state.isCreatingTransaction = false;
@@ -199,18 +193,18 @@ const transactionSlice = createSlice({
       })
       .addCase(fetchTransactionHistory.fulfilled, (state, action) => {
         state.isLoadingTransactions = false;
-        
+
         const { offset, limit, records } = action.payload;
-        
+
         if (offset === 0) {
           state.transactions = records;
         } else {
           state.transactions = [...state.transactions, ...records];
         }
-        
+
         state.offset = offset;
         state.limit = limit;
-        state.hasMore = records.length === limit;
+        state.hasMore = records.length === Number(limit);
         state.error = null;
       })
       .addCase(fetchTransactionHistory.rejected, (state, action) => {
