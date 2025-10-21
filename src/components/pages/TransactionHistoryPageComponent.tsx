@@ -9,18 +9,13 @@ import { formatDate } from '@/lib/utils/dateUtils';
 import ProfileBalanceCard from '../ui/cards/ProfileBalanceCard';
 export default function TransactionHistoryPageComponent() {
   const dispatch = useAppDispatch();
-  const [showBalance, setShowBalance] = useState(false);
-
   const {
-    balance,
     transactions,
     offset,
     limit,
     hasMore,
     isLoadingTransactions,
   } = useAppSelector((state) => state.transaction);
-
-  const user = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     dispatch(fetchBalance());
@@ -53,7 +48,6 @@ export default function TransactionHistoryPageComponent() {
     return 'text-red-500';
   };
 
-  
 
   return (
     <div className="min-h-screen bg-white">

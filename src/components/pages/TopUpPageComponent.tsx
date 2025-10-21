@@ -9,21 +9,16 @@ import ProfileBalanceCard from '../ui/cards/ProfileBalanceCard';
 
 const TopUpPageComponent = () => {
   const dispatch = useAppDispatch();
-  const { balance, isTopingUp, topUpResult, successMessage, error } = useAppSelector(
+  const {  isTopingUp, topUpResult, successMessage, error } = useAppSelector(
     (state) => state.transaction
   );
-    const { user } = useSelector((state: RootState) => state.auth);
   const [amount, setAmount] = useState('');
-  const [showBalance, setShowBalance] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState(''); // 'success', 'error', 'confirm'
 
   const quickAmounts = [10000, 20000, 50000, 100000, 250000, 500000];
 
-  useEffect(() => {
-    // Fetch balance on mount
-    // dispatch(fetchBalance());
-  }, [dispatch]);
+ 
 
   useEffect(() => {
     if (successMessage) {

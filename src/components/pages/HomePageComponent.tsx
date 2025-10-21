@@ -58,7 +58,6 @@ export default function HomePageComponent(): React.JSX.Element {
   useEffect(() => {
     dispatch(fetchBanners());
     dispatch(fetchServices());
-    dispatch(fetchBalance());
   }, [dispatch]);
 
   return (

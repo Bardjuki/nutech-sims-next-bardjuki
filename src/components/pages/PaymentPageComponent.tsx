@@ -27,7 +27,6 @@ export default function PaymentPageComponent({ serviceCode }: PaymentPageCompone
   const [serviceDetail, setServiceDetail] = useState<Service | null>(null);
 
   const {
-    balance,
     currentTransaction,
     isCreatingTransaction,
     error,
@@ -35,7 +34,6 @@ export default function PaymentPageComponent({ serviceCode }: PaymentPageCompone
   } = useAppSelector((state) => state.transaction);
 
   const { services, isLoadingServices } = useAppSelector((state) => state.module);
-  const user = useAppSelector((state) => state.auth.user);
 
   useEffect(() => {
     dispatch(fetchBalance());
