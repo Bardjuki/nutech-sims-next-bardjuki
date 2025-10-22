@@ -17,10 +17,10 @@ export default function TransactionHistoryPageComponent() {
     isLoadingTransactions,
   } = useAppSelector((state) => state.transaction);
 
-  useEffect(() => {
-    dispatch(resetTransactions());
-    dispatch(fetchTransactionHistory({ offset: 0, limit: 5 }));
-  }, [dispatch]);
+useEffect(() => {
+  dispatch(resetTransactions());
+  dispatch(fetchTransactionHistory({ offset: 0, limit: 5 }));
+}, [dispatch]);
 
   const handleLoadMore = () => {
     if (!isLoadingTransactions && hasMore) {

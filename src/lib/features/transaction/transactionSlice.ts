@@ -199,7 +199,13 @@ const transactionSlice = createSlice({
         if (offset === 0) {
           state.transactions = records;
         } else {
-          state.transactions = [...state.transactions, ...records];
+          const existingInvoices = new Set(
+            state.transactions.map((t) => t.invoice_number)
+          );
+          const newRecords = records.filter(
+            (r) => !existingInvoices.has(r.invoice_number)
+          );
+          state.transactions = [...state.transactions, ...newRecords];
         }
 
         state.offset = offset;
