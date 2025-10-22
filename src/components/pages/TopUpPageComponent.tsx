@@ -84,7 +84,6 @@ const TopUpPageComponent = () => {
       setTimeout(() => {
         setModalType('success');
         setShowModal(true);
-        setAmount('');
         setValidationError('');
       }, 1000);
     } catch (err) {
@@ -94,6 +93,7 @@ const TopUpPageComponent = () => {
 
   const handleCloseModal = () => {
     setShowModal(false);
+    setAmount('');
     if (modalType === 'success') {
       router.push('/');
     }
@@ -106,7 +106,6 @@ const TopUpPageComponent = () => {
     if (successMessage) {
       setModalType('success');
       setShowModal(true);
-      setAmount('');
       setValidationError('');
     }
   }, [successMessage]);
@@ -227,7 +226,7 @@ useEffect(() => {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <p className="text-sm text-gray-600 mb-4">Nominal Cepat</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               {quickAmounts.map((value, index) => (
                 <motion.button
                   key={value}
@@ -269,7 +268,7 @@ useEffect(() => {
             animate="visible"
             exit="exit"
             className="fixed inset-0  bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
-            onClick={handleCloseModal}
+            onClick={() => { setShowModal(false)}}
           >
             <motion.div
               variants={{
