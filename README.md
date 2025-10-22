@@ -157,6 +157,10 @@ Create a `.env.local` file in the root directory:
 # API Configuration
 NEXT_PUBLIC_API_BASE_URL=https://api-doc-tht.nutech-integrasi.com
 
+# Application Configuration
+NEXT_PUBLIC_APP_NAME=SIMS PPOB
+NEXT_PUBLIC_APP_VERSION=1.0.0
+
 ## 🎮 Running the Application
 
 ### Development Mode
