@@ -403,7 +403,7 @@ useEffect(() => {
                     className="text-2xl sm:text-3xl font-bold mb-2 text-gray-900"
                   >
                     {formatCurrency(
-                      Number(topUpResult?.balance ?? amount ?? 0)
+                      Number(amount ?? 0)
                     )}
                   </motion.p>
                   <motion.p
