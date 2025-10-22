@@ -2,7 +2,7 @@ import TransactionHistoryPageComponent from '@/components/pages/TransactionHisto
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Transaction History - SIMS PPOB',
+  title: `Transaction History - ${process.env.NEXT_PUBLIC_APP_NAME}`,
   description: 'Riwayat transaksi Anda',
 };
 

@@ -2,7 +2,7 @@ import AccountPageComponent from '@/components/pages/AccountPageComponent';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Akun - SIMS PPOB',
+  title: `Akun - ${process.env.NEXT_PUBLIC_APP_NAME}`,
   description: 'Kelola akun Anda',
 };
 

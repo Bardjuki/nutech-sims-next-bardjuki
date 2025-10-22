@@ -2,7 +2,7 @@ import PaymentPageComponent from '@/components/pages/PaymentPageComponent';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Pembayaran - SIMS PPOB',
+  title: `Pembayaran - ${process.env.NEXT_PUBLIC_APP_NAME}`,
   description: 'Pembayaran layanan',
 };
 

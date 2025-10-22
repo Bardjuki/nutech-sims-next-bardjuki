@@ -3,7 +3,7 @@ import LoginPageComponent from '@/components/pages/LoginPageComponent';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Masuk - SIMS PPOB',
+  title: `Masuk - ${process.env.NEXT_PUBLIC_APP_NAME}`,
   description: 'Masuk atau buat akun untuk memulai',
 };
 

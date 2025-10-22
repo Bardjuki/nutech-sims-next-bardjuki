@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'SIMS PPOB',
+  title: process.env.NEXT_PUBLIC_APP_NAME,
   description: 'Sistem Informasi Manajemen PPOB',
 };
 
