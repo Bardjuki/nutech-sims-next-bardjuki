@@ -6,6 +6,7 @@ import { topUpBalance } from '@/lib/features/transaction/transactionSlice';
 import ProfileBalanceCard from '../ui/cards/ProfileBalanceCard';
 import { formatCurrency } from '@/lib/utils/numberUtils';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const TopUpPageComponent = () => {
   const dispatch = useAppDispatch();
@@ -28,8 +29,6 @@ const TopUpPageComponent = () => {
       setShowModal(true);
       setAmount('');
       setValidationError('');
-      setTimeout(() => {
-      }, 3000);
     }
   }, [successMessage]);
 
@@ -37,8 +36,6 @@ const TopUpPageComponent = () => {
     if (error) {
       setModalType('error');
       setShowModal(true);
-      setTimeout(() => {
-      }, 3000);
     }
   }, [error]);
 
@@ -74,7 +71,7 @@ const TopUpPageComponent = () => {
 
   const handleQuickAmount = (value: number) => {
     setAmount(value.toString());
-    setValidationError(''); // Clear any validation errors
+    setValidationError('');
   };
 
   const handleTopUpClick = () => {
@@ -117,14 +114,74 @@ const TopUpPageComponent = () => {
 
   const isAmountValid = amount && !validationError;
 
+  // Modal animation variants
+  const overlayVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1 },
+    exit: { opacity: 0 }
+  };
+
+  const modalVariants = {
+    hidden: { 
+      opacity: 0, 
+      scale: 0.8,
+      y: 50
+    },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      y: 0,
+      transition: {
+        type: 'spring',
+        stiffness: 300,
+        damping: 25
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      scale: 0.8,
+      y: 50,
+      transition: {
+        duration: 0.2
+      }
+    }
+  };
+
+  const iconVariants = {
+    hidden: { scale: 0, rotate: -180 },
+    visible: { 
+      scale: 1, 
+      rotate: 0,
+      transition: {
+        type: 'spring',
+        stiffness: 200,
+        damping: 15,
+        delay: 0.1
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <ProfileBalanceCard />
-        <div> <p className="text-sm text-gray-600 mb-2">Silahkan masukan</p>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Nominal Top Up</h2></div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <p className="text-sm text-gray-600 mb-2">Silahkan masukan</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Nominal Top Up</h2>
+        </motion.div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="lg:col-span-2"
+          >
             <div className="space-y-4">
               <div>
                 <div className="relative">
@@ -136,7 +193,7 @@ const TopUpPageComponent = () => {
                     value={amount}
                     onChange={handleAmountChange}
                     placeholder="masukan nominal Top Up"
-                    className={`w-full pl-10 pr-4 py-3 border rounded focus:outline-none focus:ring-2 transition-colors ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
                       validationError
                         ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300 focus:ring-red-500'
@@ -144,15 +201,21 @@ const TopUpPageComponent = () => {
                   />
                 </div>
                 
-                {/* Validation Error Message */}
-                {validationError && (
-                  <div className="flex items-center gap-2 mt-2 text-red-600 text-sm">
-                    <AlertCircle size={16} />
-                    <span>{validationError}</span>
-                  </div>
-                )}
+                <AnimatePresence mode="wait">
+                  {validationError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex items-center gap-2 mt-2 text-red-600 text-sm"
+                    >
+                      <AlertCircle size={16} />
+                      <span>{validationError}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 
-                {/* Helper Text */}
                 {!validationError && !amount && (
                   <p className="mt-2 text-xs text-gray-500">
                     Minimum {formatCurrency(MIN_AMOUNT)} - Maksimum {formatCurrency(MAX_AMOUNT)}
@@ -160,105 +223,233 @@ const TopUpPageComponent = () => {
                 )}
               </div>
 
-              <button
+              <motion.button
+                whileHover={{ scale: isAmountValid && !isTopingUp ? 1.02 : 1 }}
+                whileTap={{ scale: isAmountValid && !isTopingUp ? 0.98 : 1 }}
                 onClick={handleTopUpClick}
                 disabled={!isAmountValid || isTopingUp}
-                className={`w-full py-3 rounded font-medium transition-colors ${
+                className={`w-full py-3 rounded-lg font-medium transition-all ${
                   isAmountValid && !isTopingUp
-                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    ? 'bg-red-600 text-white hover:bg-red-700 shadow-lg hover:shadow-xl'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                {isTopingUp ? 'Processing...' : 'Top Up'}
-              </button>
+                {isTopingUp ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <motion.span
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                    />
+                    Processing...
+                  </span>
+                ) : (
+                  'Top Up'
+                )}
+              </motion.button>
             </div>
-            </div>
+          </motion.div>
           
-          <div>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
             <p className="text-sm text-gray-600 mb-4">Nominal Cepat</p>
             <div className="grid grid-cols-3 gap-3">
-              {quickAmounts.map((value) => (
-                <button
+              {quickAmounts.map((value, index) => (
+                <motion.button
                   key={value}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, delay: 0.4 + index * 0.05 }}
+                  whileHover={{ scale: value <= MAX_AMOUNT ? 1.05 : 1 }}
+                  whileTap={{ scale: value <= MAX_AMOUNT ? 0.95 : 1 }}
                   onClick={() => handleQuickAmount(value)}
                   disabled={value > MAX_AMOUNT}
-                  className={`py-3 px-4 border rounded transition-colors text-sm font-medium ${
+                  className={`py-3 px-4 border rounded-lg transition-all text-sm font-medium ${
                     value > MAX_AMOUNT
                       ? 'border-gray-200 text-gray-400 cursor-not-allowed'
                       : 'border-gray-300 hover:border-red-500 hover:bg-red-50 cursor-pointer'
-                  } ${amount === value.toString() ? 'border-red-500 bg-red-50' : ''}`}
+                  } ${amount === value.toString() ? 'border-red-500 bg-red-50 ring-2 ring-red-200' : ''}`}
                 >
                   {formatCurrency(value)}
-                </button>
+                </motion.button>
               ))}
             </div>
-          </div>
+          </motion.div>
         </div>
       </main>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={handleCloseModal}>
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full text-center" onClick={(e) => e.stopPropagation()}>
-            {modalType === 'confirm' && (
-              <>
-                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Wallet size={32} className="text-white" />
-                </div>
-                <p className="text-sm text-gray-600 mb-2">
-                  Anda yakin untuk Top Up sebesar
-                </p>
-                <p className="text-2xl font-bold mb-6">{formatCurrency(parseInt(amount))} ?</p>
-                <button
-                  onClick={handleConfirmTopUp}
-                  className="w-full py-2 bg-red-600 text-white rounded mb-2 hover:bg-red-700 font-medium"
-                >
-                  Ya, lanjutkan Top Up
-                </button>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="w-full py-2 text-gray-500 hover:text-gray-700 font-medium"
-                >
-                  Batalkan
-                </button>
-              </>
-            )}
+      {/* Enhanced Modal with Framer Motion */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            variants={overlayVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
+            onClick={handleCloseModal}
+          >
+            <motion.div
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="bg-white rounded-2xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {modalType === 'confirm' && (
+                <>
+                  <motion.div
+                    variants={iconVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="w-16 h-16 sm:w-20 sm:h-20 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
+                  >
+                    <Wallet size={32} className="text-white sm:w-10 sm:h-10" />
+                  </motion.div>
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-sm text-gray-600 mb-2"
+                  >
+                    Anda yakin untuk Top Up sebesar
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3, type: 'spring' }}
+                    className="text-2xl sm:text-3xl font-bold mb-6 text-gray-900"
+                  >
+                    {formatCurrency(parseInt(amount))} ?
+                  </motion.p>
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleConfirmTopUp}
+                    className="w-full py-3 bg-red-600 text-white rounded-lg mb-3 hover:bg-red-700 font-medium shadow-lg transition-all"
+                  >
+                    Ya, lanjutkan Top Up
+                  </motion.button>
+                  <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowModal(false)}
+                    className="w-full py-3 text-gray-500 hover:text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-all"
+                  >
+                    Batalkan
+                  </motion.button>
+                </>
+              )}
 
-            {modalType === 'success' && (
-              <>
-                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Check size={32} className="text-white" />
-                </div>
-                <p className="text-sm text-gray-600 mb-2">Top Up sebesar</p>
-                <p className="text-2xl font-bold mb-2">{formatCurrency(Number(topUpResult?.balance ?? amount ?? 0))}</p>
-                <p className="text-sm text-gray-600 mb-6">berhasil!</p>
-                <button
-                  onClick={handleCloseModal}
-                  className="text-red-600 hover:text-red-700 font-medium"
-                >
-                  Kembali ke Beranda
-                </button>
-              </>
-            )}
+              {modalType === 'success' && (
+                <>
+                  <motion.div
+                    variants={iconVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="w-16 h-16 sm:w-20 sm:h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
+                  >
+                    <Check size={32} className="text-white sm:w-10 sm:h-10" />
+                  </motion.div>
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-sm text-gray-600 mb-2"
+                  >
+                    Top Up sebesar
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3, type: 'spring' }}
+                    className="text-2xl sm:text-3xl font-bold mb-2 text-gray-900"
+                  >
+                    {formatCurrency(Number(topUpResult?.balance ?? amount ?? 0))}
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-sm text-gray-600 mb-6"
+                  >
+                    berhasil!
+                  </motion.p>
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleCloseModal}
+                    className="text-red-600 hover:text-red-700 font-medium py-2 px-6 rounded-lg hover:bg-red-50 transition-all"
+                  >
+                    Kembali ke Beranda
+                  </motion.button>
+                </>
+              )}
 
-            {modalType === 'error' && (
-              <>
-                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <X size={32} className="text-white" />
-                </div>
-                <p className="text-sm text-gray-600 mb-2">Top Up sebesar</p>
-                <p className="text-2xl font-bold mb-2">{formatCurrency(parseInt(amount))}</p>
-                <p className="text-sm text-gray-600 mb-6">gagal</p>
-                <button
-                  onClick={handleCloseModal}
-                  className="text-red-600 hover:text-red-700 font-medium"
-                >
-                  Kembali ke Beranda
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+              {modalType === 'error' && (
+                <>
+                  <motion.div
+                    variants={iconVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="w-16 h-16 sm:w-20 sm:h-20 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
+                  >
+                    <X size={32} className="text-white sm:w-10 sm:h-10" />
+                  </motion.div>
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-sm text-gray-600 mb-2"
+                  >
+                    Top Up sebesar
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3, type: 'spring' }}
+                    className="text-2xl sm:text-3xl font-bold mb-2 text-gray-900"
+                  >
+                    {formatCurrency(parseInt(amount))}
+                  </motion.p>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-sm text-gray-600 mb-6"
+                  >
+                    gagal
+                  </motion.p>
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleCloseModal}
+                    className="text-red-600 hover:text-red-700 font-medium py-2 px-6 rounded-lg hover:bg-red-50 transition-all"
+                  >
+                    Kembali ke Beranda
+                  </motion.button>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

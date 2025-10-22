@@ -144,6 +144,12 @@ const transactionSlice = createSlice({
       state.offset = 0;
       state.hasMore = true;
     },
+     resetTransactionTopUp: (state) => {
+      state.isTopingUp = false;
+      state.error = null;
+      state.successMessage = null;
+      state.topUpResult = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -240,6 +246,7 @@ const transactionSlice = createSlice({
 
 export const {
   clearError,
+  resetTransactionTopUp,
   clearSuccessMessage,
   clearMessages,
   clearCurrentTransaction,
