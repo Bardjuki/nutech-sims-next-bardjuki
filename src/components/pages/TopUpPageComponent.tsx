@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const TopUpPageComponent = () => {
   const dispatch = useAppDispatch();
-  const { isTopingUp, topUpResult, successMessage, error } = useAppSelector(
+  const { isTopingUp, successMessage, error } = useAppSelector(
     (state) => state.transaction
   );
   const [amount, setAmount] = useState<string>('');
