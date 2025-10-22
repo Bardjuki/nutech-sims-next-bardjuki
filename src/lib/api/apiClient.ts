@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 // Base API URL
-const API_BASE_URL = 'https://take-home-test-api.nutech-integrasi.com';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
