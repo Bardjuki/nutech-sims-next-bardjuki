@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, FormEvent, ChangeEvent, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks/reduxHooks';
 import { clearError, login } from '@/lib/features/auth/authSlice';
 
@@ -15,16 +17,11 @@ interface FormErrors {
 export default function LoginPageComponent(): React.JSX.Element {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  
-  // Get loading and error state from Redux
   const { isLoading, error: authError } = useAppSelector((state) => state.auth);
-  
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
-
-  // Refs for auto-scroll
   const emailRef = useRef<HTMLDivElement>(null);
   const passwordRef = useRef<HTMLDivElement>(null);
 
@@ -42,123 +39,102 @@ export default function LoginPageComponent(): React.JSX.Element {
   };
 
   const scrollToError = (fieldRef: React.RefObject<HTMLDivElement | null>): void => {
-    if (fieldRef.current) {
-      fieldRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }
+    fieldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-
-    // Clear any previous auth errors
-    if (authError) {
-      dispatch(clearError());
-    }
-
+    if (authError) dispatch(clearError());
     const newErrors: FormErrors = {
       email: validateEmail(email),
       password: validatePassword(password),
     };
-
     setErrors(newErrors);
-
-    // Find first error and scroll to it
-    if (newErrors.email) {
-      scrollToError(emailRef);
-      return;
-    }
-    if (newErrors.password) {
-      scrollToError(passwordRef);
-      return;
-    }
-
-    // If no validation errors, attempt login
+    if (newErrors.email) return scrollToError(emailRef);
+    if (newErrors.password) return scrollToError(passwordRef);
     try {
-      const result = await dispatch(login({ email, password })).unwrap();
-      
-      // Login successful, redirect to home
+      await dispatch(login({ email, password })).unwrap();
       router.push('/');
     } catch (error) {
-      // Error is handled by Redux and shown in UI
       console.error('Login failed:', error);
     }
   };
 
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>): void => {
     setEmail(e.target.value);
-    // Clear error when user types
-    if (errors.email) {
-      setErrors((prev) => ({ ...prev, email: undefined }));
-    }
-    if (authError) {
-      dispatch(clearError());
-    }
+    if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+    if (authError) dispatch(clearError());
   };
 
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>): void => {
     setPassword(e.target.value);
-    // Clear error when user types
-    if (errors.password) {
-      setErrors((prev) => ({ ...prev, password: undefined }));
-    }
-    if (authError) {
-      dispatch(clearError());
-    }
-  };
-
-  const togglePasswordVisibility = (): void => {
-    setShowPassword(!showPassword);
+    if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+    if (authError) dispatch(clearError());
   };
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Section - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+      <motion.div
+        initial={{ opacity: 0, x: -60 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className="w-full lg:w-1/2 flex items-center justify-center p-8"
+      >
         <div className="w-full max-w-md">
-          {/* Logo and Title */}
-          <div className="flex items-center justify-center gap-2 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex items-center justify-center gap-2 mb-8"
+          >
             <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-bold">S</span>
             </div>
             <span className="text-xl text-black font-semibold">SIMS PPOB</span>
-          </div>
+          </motion.div>
 
-          {/* Heading */}
-          <h1 className="text-3xl font-bold text-black text-center mb-10">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="text-3xl font-bold text-black text-center mb-10"
+          >
             Masuk atau buat akun
             <br />
             untuk memulai
-          </h1>
+          </motion.h1>
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* API Error Message */}
+          <motion.form
+            onSubmit={handleSubmit}
+            className="space-y-5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
             {authError && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm"
+              >
                 {authError}
-              </div>
+              </motion.div>
             )}
 
-            {/* Email Input */}
             <div ref={emailRef}>
               <div className="relative">
-                <span
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                <Mail
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${
                     errors.email ? 'text-red-600' : 'text-gray-400'
                   }`}
-                >
-                  @
-                </span>
+                />
                 <input
                   type="email"
-                  placeholder="masukan email anda"
+                  placeholder="Masukan email anda"
                   value={email}
                   onChange={handleEmailChange}
                   disabled={isLoading}
-                  className={`w-full pl-12 pr-4 py-3 border text-black rounded-md focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`w-full pl-12 pr-4 py-3 border text-black rounded-md focus:outline-none focus:ring-2 disabled:opacity-50 ${
                     errors.email
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
@@ -166,27 +142,30 @@ export default function LoginPageComponent(): React.JSX.Element {
                 />
               </div>
               {errors.email && (
-                <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-red-600 text-sm mt-1"
+                >
+                  {errors.email}
+                </motion.p>
               )}
             </div>
 
-            {/* Password Input */}
             <div ref={passwordRef}>
               <div className="relative">
-                <span
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                <Lock
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${
                     errors.password ? 'text-red-600' : 'text-gray-400'
                   }`}
-                >
-                  🔒
-                </span>
+                />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="masukan password anda"
+                  placeholder="Masukan password anda"
                   value={password}
                   onChange={handlePasswordChange}
                   disabled={isLoading}
-                  className={`w-full pl-12 pr-12 py-3 border text-black rounded-md focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={`w-full pl-12 pr-12 py-3 border text-black rounded-md focus:outline-none focus:ring-2 disabled:opacity-50 ${
                     errors.password
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
@@ -194,47 +173,55 @@ export default function LoginPageComponent(): React.JSX.Element {
                 />
                 <button
                   type="button"
-                  onClick={togglePasswordVisibility}
+                  onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
-                  className={`absolute right-4 top-1/2 -translate-y-1/2 disabled:opacity-50 ${
-                    errors.password
-                      ? 'text-red-600'
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
+                  className="absolute cursor-pointer right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                 >
-                  👁️
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-red-600 text-sm mt-1">{errors.password}</p>
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-red-600 text-sm mt-1"
+                >
+                  {errors.password}
+                </motion.p>
               )}
             </div>
 
-            {/* Submit Button */}
-            <button
+            <motion.button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-red-600 text-white py-3 rounded-md font-semibold hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02 }}
+              className="w-full bg-red-600 cursor-pointer text-white py-3 rounded-md font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
             >
               {isLoading ? 'Memproses...' : 'Masuk'}
-            </button>
-          </form>
+            </motion.button>
+          </motion.form>
 
-          {/* Register Link */}
-          <p className="text-center mt-6 text-gray-600">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            className="text-center mt-6 text-gray-600"
+          >
             belum punya akun? registrasi{' '}
-            <Link
-              href="/auth/register"
-              className="text-red-600 font-semibold hover:underline"
-            >
+            <Link href="/auth/register" className="text-red-600 font-semibold hover:underline">
               di sini
             </Link>
-          </p>
+          </motion.p>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Right Section - Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 relative">
+      <motion.div
+        initial={{ opacity: 0, x: 60 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        className="hidden lg:flex lg:w-1/2 relative"
+      >
         <Image
           src="/assets/login_illustration.png"
           alt="Illustration"
@@ -242,7 +229,7 @@ export default function LoginPageComponent(): React.JSX.Element {
           priority
           className="object-cover"
         />
-      </div>
+      </motion.div>
     </div>
   );
 }

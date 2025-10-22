@@ -4,6 +4,8 @@ import { useState, FormEvent, ChangeEvent, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { Mail, User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks/reduxHooks';
 import { register, clearMessages } from '@/lib/features/auth/authSlice';
 
@@ -26,10 +28,8 @@ interface FormErrors {
 export default function RegisterPageComponent(): React.JSX.Element {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  
-  // Get auth state from Redux
   const { isLoading, error, successMessage } = useAppSelector((state) => state.auth);
-  
+
   const [formData, setFormData] = useState<FormData>({
     email: '',
     firstName: '',
@@ -39,32 +39,27 @@ export default function RegisterPageComponent(): React.JSX.Element {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Refs for auto-scroll
   const emailRef = useRef<HTMLDivElement>(null);
   const firstNameRef = useRef<HTMLDivElement>(null);
   const lastNameRef = useRef<HTMLDivElement>(null);
   const passwordRef = useRef<HTMLDivElement>(null);
   const confirmPasswordRef = useRef<HTMLDivElement>(null);
 
-  // Clear messages on component mount and unmount
   useEffect(() => {
     dispatch(clearMessages());
-    
     return () => {
       dispatch(clearMessages());
     };
   }, [dispatch]);
 
-  // Redirect to login after successful registration
   useEffect(() => {
     if (successMessage) {
       const timer = setTimeout(() => {
         router.push('/auth/login');
-      }, 2000); // Redirect after 2 seconds
-
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [successMessage, router]);
@@ -76,15 +71,9 @@ export default function RegisterPageComponent(): React.JSX.Element {
     return undefined;
   };
 
-  const validateFirstName = (name: string): string | undefined => {
-    if (!name) return 'Nama depan harus diisi';
-    if (name.length < 2) return 'Nama depan minimal 2 karakter';
-    return undefined;
-  };
-
-  const validateLastName = (name: string): string | undefined => {
-    if (!name) return 'Nama belakang harus diisi';
-    if (name.length < 2) return 'Nama belakang minimal 2 karakter';
+  const validateName = (name: string, field: string): string | undefined => {
+    if (!name) return `${field} harus diisi`;
+    if (name.length < 2) return `${field} minimal 2 karakter`;
     return undefined;
   };
 
@@ -94,80 +83,40 @@ export default function RegisterPageComponent(): React.JSX.Element {
     return undefined;
   };
 
-  const validateConfirmPassword = (
-    password: string,
-    confirmPassword: string
-  ): string | undefined => {
-    if (!confirmPassword) return 'Konfirmasi password harus diisi';
-    if (password !== confirmPassword) return 'Password tidak sama';
+  const validateConfirmPassword = (password: string, confirm: string): string | undefined => {
+    if (!confirm) return 'Konfirmasi password harus diisi';
+    if (password !== confirm) return 'Password tidak sama';
     return undefined;
   };
 
-  const handleInputChange = (field: keyof FormData) => (
-    e: ChangeEvent<HTMLInputElement>
-  ): void => {
-    const value = e.target.value;
-    setFormData((prev) => ({ ...prev, [field]: value }));
-
-    // Clear error when user types
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-    
-    // Clear Redux error when user types
-    if (error) {
-      dispatch(clearMessages());
-    }
+  const scrollToError = (ref: React.RefObject<HTMLDivElement | null>): void => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
-  const scrollToError = (fieldRef: React.RefObject<HTMLDivElement | null>): void => {
-    if (fieldRef.current) {
-      fieldRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }
-  };
+  const handleInputChange =
+    (field: keyof FormData) => (e: ChangeEvent<HTMLInputElement>): void => {
+      const value = e.target.value;
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+      if (error) dispatch(clearMessages());
+    };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
-
     const newErrors: FormErrors = {
       email: validateEmail(formData.email),
-      firstName: validateFirstName(formData.firstName),
-      lastName: validateLastName(formData.lastName),
+      firstName: validateName(formData.firstName, 'Nama depan'),
+      lastName: validateName(formData.lastName, 'Nama belakang'),
       password: validatePassword(formData.password),
-      confirmPassword: validateConfirmPassword(
-        formData.password,
-        formData.confirmPassword
-      ),
+      confirmPassword: validateConfirmPassword(formData.password, formData.confirmPassword),
     };
-
     setErrors(newErrors);
+    if (newErrors.email) return scrollToError(emailRef);
+    if (newErrors.firstName) return scrollToError(firstNameRef);
+    if (newErrors.lastName) return scrollToError(lastNameRef);
+    if (newErrors.password) return scrollToError(passwordRef);
+    if (newErrors.confirmPassword) return scrollToError(confirmPasswordRef);
 
-    // Find first error and scroll to it
-    if (newErrors.email) {
-      scrollToError(emailRef);
-      return;
-    }
-    if (newErrors.firstName) {
-      scrollToError(firstNameRef);
-      return;
-    }
-    if (newErrors.lastName) {
-      scrollToError(lastNameRef);
-      return;
-    }
-    if (newErrors.password) {
-      scrollToError(passwordRef);
-      return;
-    }
-    if (newErrors.confirmPassword) {
-      scrollToError(confirmPasswordRef);
-      return;
-    }
-
-    // If no validation errors, attempt registration
     try {
       await dispatch(
         register({
@@ -177,158 +126,154 @@ export default function RegisterPageComponent(): React.JSX.Element {
           password: formData.password,
         })
       ).unwrap();
-      
-      // Success is handled by useEffect above
-    } catch (error) {
-      // Error is handled by Redux and shown in UI
-      console.error('Registration failed:', error);
+    } catch (err) {
+      console.error('Registration failed:', err);
     }
   };
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Section - Register Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
+      <motion.div
+        initial={{ opacity: 0, x: -60 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white"
+      >
         <div className="w-full max-w-md">
-          {/* Logo and Title */}
-          <div className="flex items-center justify-center gap-2 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="flex items-center justify-center gap-2 mb-8"
+          >
             <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-bold">S</span>
             </div>
-            <span className="text-xl font-semibold">SIMS PPOB</span>
-          </div>
+            <span className="text-xl font-semibold text-black">SIMS PPOB</span>
+          </motion.div>
 
-          {/* Heading */}
-          <h1 className="text-3xl font-bold text-center mb-10">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-3xl font-bold text-center text-black mb-10"
+          >
             Lengkapi data untuk
             <br />
             membuat akun
-          </h1>
+          </motion.h1>
 
-          {/* Success Message */}
           {successMessage && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-green-800 text-sm text-center font-medium">
-                ✓ {successMessage}
-              </p>
-              <p className="text-green-600 text-xs text-center mt-1">
-                Mengalihkan ke halaman login...
-              </p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md text-center"
+            >
+              <p className="text-green-800 text-sm font-medium">{successMessage}</p>
+              <p className="text-green-600 text-xs mt-1">Mengalihkan ke halaman login...</p>
+            </motion.div>
           )}
 
-          {/* Error Message from API */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-red-800 text-sm text-center font-medium">
-                ✕ {error}
-              </p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-center"
+            >
+              <p className="text-red-800 text-sm font-medium">{error}</p>
+            </motion.div>
           )}
 
-          {/* Register Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email Input */}
+          <motion.form
+            onSubmit={handleSubmit}
+            className="space-y-5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
             <div ref={emailRef}>
               <div className="relative">
-                <span
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                <Mail
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${
                     errors.email ? 'text-red-600' : 'text-gray-400'
                   }`}
-                >
-                  @
-                </span>
+                />
                 <input
                   type="email"
-                  placeholder="masukan email anda"
+                  placeholder="Masukan email anda"
                   value={formData.email}
                   onChange={handleInputChange('email')}
                   disabled={isLoading}
-                  className={`w-full pl-12 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  className={`w-full pl-12 pr-4 py-3 border rounded-md text-black focus:outline-none focus:ring-2 ${
                     errors.email
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
                   }`}
                 />
               </div>
-              {errors.email && (
-                <p className="text-red-600 text-sm mt-1">{errors.email}</p>
-              )}
+              {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
             </div>
 
-            {/* First Name Input */}
             <div ref={firstNameRef}>
               <div className="relative">
-                <span
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                <User
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${
                     errors.firstName ? 'text-red-600' : 'text-gray-400'
                   }`}
-                >
-                  👤
-                </span>
+                />
                 <input
                   type="text"
-                  placeholder="nama depan"
+                  placeholder="Nama depan"
                   value={formData.firstName}
                   onChange={handleInputChange('firstName')}
                   disabled={isLoading}
-                  className={`w-full pl-12 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  className={`w-full pl-12 pr-4 py-3 border rounded-md text-black focus:outline-none focus:ring-2 ${
                     errors.firstName
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
                   }`}
                 />
               </div>
-              {errors.firstName && (
-                <p className="text-red-600 text-sm mt-1">{errors.firstName}</p>
-              )}
+              {errors.firstName && <p className="text-red-600 text-sm mt-1">{errors.firstName}</p>}
             </div>
 
-            {/* Last Name Input */}
             <div ref={lastNameRef}>
               <div className="relative">
-                <span
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                <User
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${
                     errors.lastName ? 'text-red-600' : 'text-gray-400'
                   }`}
-                >
-                  👤
-                </span>
+                />
                 <input
                   type="text"
-                  placeholder="nama belakang"
+                  placeholder="Nama belakang"
                   value={formData.lastName}
                   onChange={handleInputChange('lastName')}
                   disabled={isLoading}
-                  className={`w-full pl-12 pr-4 py-3 border rounded-md focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  className={`w-full pl-12 pr-4 py-3 border rounded-md text-black focus:outline-none focus:ring-2 ${
                     errors.lastName
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
                   }`}
                 />
               </div>
-              {errors.lastName && (
-                <p className="text-red-600 text-sm mt-1">{errors.lastName}</p>
-              )}
+              {errors.lastName && <p className="text-red-600 text-sm mt-1">{errors.lastName}</p>}
             </div>
 
-            {/* Password Input */}
             <div ref={passwordRef}>
               <div className="relative">
-                <span
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                <Lock
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${
                     errors.password ? 'text-red-600' : 'text-gray-400'
                   }`}
-                >
-                  🔒
-                </span>
+                />
                 <input
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="buat password"
+                  placeholder="Buat password"
                   value={formData.password}
                   onChange={handleInputChange('password')}
                   disabled={isLoading}
-                  className={`w-full pl-12 pr-12 py-3 border rounded-md focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  className={`w-full pl-12 pr-12 py-3 border rounded-md text-black focus:outline-none focus:ring-2 ${
                     errors.password
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
@@ -338,37 +283,28 @@ export default function RegisterPageComponent(): React.JSX.Element {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
-                  className={`absolute right-4 top-1/2 -translate-y-1/2 disabled:cursor-not-allowed ${
-                    errors.password
-                      ? 'text-red-600'
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
+                  className="absolute cursor-pointer right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  👁️
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-red-600 text-sm mt-1">{errors.password}</p>
-              )}
+              {errors.password && <p className="text-red-600 text-sm mt-1">{errors.password}</p>}
             </div>
 
-            {/* Confirm Password Input */}
             <div ref={confirmPasswordRef}>
               <div className="relative">
-                <span
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 ${
+                <Lock
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${
                     errors.confirmPassword ? 'text-red-600' : 'text-gray-400'
                   }`}
-                >
-                  🔒
-                </span>
+                />
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="konfirmasi password"
+                  placeholder="Konfirmasi password"
                   value={formData.confirmPassword}
                   onChange={handleInputChange('confirmPassword')}
                   disabled={isLoading}
-                  className={`w-full pl-12 pr-12 py-3 border rounded-md focus:outline-none focus:ring-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${
+                  className={`w-full pl-12 pr-12 py-3 border rounded-md text-black focus:outline-none focus:ring-2 ${
                     errors.confirmPassword
                       ? 'border-red-600 focus:ring-red-600'
                       : 'border-gray-300 focus:ring-red-600'
@@ -378,73 +314,47 @@ export default function RegisterPageComponent(): React.JSX.Element {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   disabled={isLoading}
-                  className={`absolute right-4 top-1/2 -translate-y-1/2 disabled:cursor-not-allowed ${
-                    errors.confirmPassword
-                      ? 'text-red-600'
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
+                  className="absolute cursor-pointer right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  👁️
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="text-red-600 text-sm mt-1">
-                  {errors.confirmPassword}
-                </p>
+                <p className="text-red-600 text-sm mt-1">{errors.confirmPassword}</p>
               )}
             </div>
 
-            {/* Submit Button */}
-            <button
+            <motion.button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-red-600 text-white py-3 rounded-md font-semibold hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02 }}
+              className="w-full bg-red-600 cursor-pointer text-white py-3 rounded-md font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
             >
-              {isLoading ? (
-                <>
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Memproses...
-                </>
-              ) : (
-                'Registrasi'
-              )}
-            </button>
-          </form>
+              {isLoading ? 'Memproses...' : 'Registrasi'}
+            </motion.button>
+          </motion.form>
 
-          {/* Login Link */}
-          <p className="text-center mt-6 text-gray-600">
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="text-center mt-6 text-gray-600"
+          >
             sudah punya akun? login{' '}
-            <Link
-              href="/auth/login"
-              className="text-red-600 font-semibold hover:underline"
-            >
+            <Link href="/auth/login" className="text-red-600 font-semibold hover:underline">
               di sini
             </Link>
-          </p>
+          </motion.p>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Right Section - Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 relative">
+      <motion.div
+        initial={{ opacity: 0, x: 60 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8 }}
+        className="hidden lg:flex lg:w-1/2 relative"
+      >
         <Image
           src="/assets/login_illustration.png"
           alt="Illustration"
@@ -452,7 +362,7 @@ export default function RegisterPageComponent(): React.JSX.Element {
           priority
           className="object-cover"
         />
-      </div>
+      </motion.div>
     </div>
   );
 }

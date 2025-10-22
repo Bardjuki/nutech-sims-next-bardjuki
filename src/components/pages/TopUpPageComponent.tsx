@@ -101,6 +101,7 @@ const TopUpPageComponent = () => {
 
   const isAmountValid = amount && !validationError;
 
+  
   useEffect(() => {
     if (successMessage) {
       setModalType('success');
@@ -117,9 +118,12 @@ const TopUpPageComponent = () => {
     }
   }, [error]);
 
-  useEffect(() => {
+useEffect(() => {
+  return () => {
     dispatch(resetTransactionTopUp());
-  }, [dispatch]);
+  };
+}, [dispatch]);
+
 
   return (
     <div className="min-h-screen bg-white">
