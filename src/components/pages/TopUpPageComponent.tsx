@@ -2,7 +2,10 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { Wallet, CreditCard, X, Check, AlertCircle } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks/reduxHooks';
-import { topUpBalance } from '@/lib/features/transaction/transactionSlice';
+import {
+  resetTransactionTopUp,
+  topUpBalance,
+} from '@/lib/features/transaction/transactionSlice';
 import ProfileBalanceCard from '../ui/cards/ProfileBalanceCard';
 import { formatCurrency } from '@/lib/utils/numberUtils';
 import { useRouter } from 'next/navigation';
@@ -18,49 +21,33 @@ const TopUpPageComponent = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
   const router = useRouter();
-  
+
   const MIN_AMOUNT = 10000;
   const MAX_AMOUNT = 1000000;
   const quickAmounts = [10000, 20000, 50000, 100000, 250000, 500000];
-
-  useEffect(() => {
-    if (successMessage) {
-      setModalType('success');
-      setShowModal(true);
-      setAmount('');
-      setValidationError('');
-    }
-  }, [successMessage]);
-
-  useEffect(() => {
-    if (error) {
-      setModalType('error');
-      setShowModal(true);
-    }
-  }, [error]);
 
   const validateAmount = (value: string): string => {
     if (!value) {
       return 'Nominal tidak boleh kosong';
     }
-    
+
     const numValue = parseInt(value);
-    
+
     if (numValue < MIN_AMOUNT) {
       return `Nominal minimum adalah ${formatCurrency(MIN_AMOUNT)}`;
     }
-    
+
     if (numValue > MAX_AMOUNT) {
       return `Nominal maksimum adalah ${formatCurrency(MAX_AMOUNT)}`;
     }
-    
+
     return '';
   };
 
   const handleAmountChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const value = e.target.value.replace(/\D/g, '');
     setAmount(value);
-    
+
     if (value) {
       const error = validateAmount(value);
       setValidationError(error);
@@ -76,12 +63,12 @@ const TopUpPageComponent = () => {
 
   const handleTopUpClick = () => {
     const error = validateAmount(amount);
-    
+
     if (error) {
       setValidationError(error);
       return;
     }
-    
+
     setModalType('confirm');
     setShowModal(true);
   };
@@ -89,9 +76,9 @@ const TopUpPageComponent = () => {
   const handleConfirmTopUp = async () => {
     setShowModal(false);
     const topUpData = {
-      top_up_amount: parseInt(amount)
+      top_up_amount: parseInt(amount),
     };
-    
+
     try {
       await dispatch(topUpBalance(topUpData)).unwrap();
       setTimeout(() => {
@@ -114,69 +101,44 @@ const TopUpPageComponent = () => {
 
   const isAmountValid = amount && !validationError;
 
-  // Modal animation variants
-  const overlayVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 },
-    exit: { opacity: 0 }
-  };
-
-  const modalVariants = {
-    hidden: { 
-      opacity: 0, 
-      scale: 0.8,
-      y: 50
-    },
-    visible: { 
-      opacity: 1, 
-      scale: 1,
-      y: 0,
-      transition: {
-        type: 'spring',
-        stiffness: 300,
-        damping: 25
-      }
-    },
-    exit: { 
-      opacity: 0, 
-      scale: 0.8,
-      y: 50,
-      transition: {
-        duration: 0.2
-      }
+  useEffect(() => {
+    if (successMessage) {
+      setModalType('success');
+      setShowModal(true);
+      setAmount('');
+      setValidationError('');
     }
-  };
+  }, [successMessage]);
 
-  const iconVariants = {
-    hidden: { scale: 0, rotate: -180 },
-    visible: { 
-      scale: 1, 
-      rotate: 0,
-      transition: {
-        type: 'spring',
-        stiffness: 200,
-        damping: 15,
-        delay: 0.1
-      }
+  useEffect(() => {
+    if (error) {
+      setModalType('error');
+      setShowModal(true);
     }
-  };
+  }, [error]);
+
+  useEffect(() => {
+    dispatch(resetTransactionTopUp());
+  }, [dispatch]);
 
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <ProfileBalanceCard />
-        
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <p className="text-sm text-gray-600 mb-2">Silahkan masukan</p>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Nominal Top Up</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            Nominal Top Up
+          </h2>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -200,7 +162,7 @@ const TopUpPageComponent = () => {
                     }`}
                   />
                 </div>
-                
+
                 <AnimatePresence mode="wait">
                   {validationError && (
                     <motion.div
@@ -215,10 +177,11 @@ const TopUpPageComponent = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
-                
+
                 {!validationError && !amount && (
                   <p className="mt-2 text-xs text-gray-500">
-                    Minimum {formatCurrency(MIN_AMOUNT)} - Maksimum {formatCurrency(MAX_AMOUNT)}
+                    Minimum {formatCurrency(MIN_AMOUNT)} - Maksimum{' '}
+                    {formatCurrency(MAX_AMOUNT)}
                   </p>
                 )}
               </div>
@@ -238,7 +201,11 @@ const TopUpPageComponent = () => {
                   <span className="flex items-center justify-center gap-2">
                     <motion.span
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: 'linear',
+                      }}
                       className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full"
                     />
                     Processing...
@@ -249,7 +216,7 @@ const TopUpPageComponent = () => {
               </motion.button>
             </div>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -271,7 +238,11 @@ const TopUpPageComponent = () => {
                     value > MAX_AMOUNT
                       ? 'border-gray-200 text-gray-400 cursor-not-allowed'
                       : 'border-gray-300 hover:border-red-500 hover:bg-red-50 cursor-pointer'
-                  } ${amount === value.toString() ? 'border-red-500 bg-red-50 ring-2 ring-red-200' : ''}`}
+                  } ${
+                    amount === value.toString()
+                      ? 'border-red-500 bg-red-50 ring-2 ring-red-200'
+                      : ''
+                  }`}
                 >
                   {formatCurrency(value)}
                 </motion.button>
@@ -285,15 +256,43 @@ const TopUpPageComponent = () => {
       <AnimatePresence>
         {showModal && (
           <motion.div
-            variants={overlayVariants}
+            variants={{
+              hidden: { opacity: 0 },
+              visible: { opacity: 1 },
+              exit: { opacity: 0 },
+            }}
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
+            className="fixed inset-0  bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm"
             onClick={handleCloseModal}
           >
             <motion.div
-              variants={modalVariants}
+              variants={{
+                hidden: {
+                  opacity: 0,
+                  scale: 0.8,
+                  y: 50,
+                },
+                visible: {
+                  opacity: 1,
+                  scale: 1,
+                  y: 0,
+                  transition: {
+                    type: 'spring',
+                    stiffness: 300,
+                    damping: 25,
+                  },
+                },
+                exit: {
+                  opacity: 0,
+                  scale: 0.8,
+                  y: 50,
+                  transition: {
+                    duration: 0.2,
+                  },
+                },
+              }}
               initial="hidden"
               animate="visible"
               exit="exit"
@@ -303,7 +302,19 @@ const TopUpPageComponent = () => {
               {modalType === 'confirm' && (
                 <>
                   <motion.div
-                    variants={iconVariants}
+                    variants={{
+                      hidden: { scale: 0, rotate: -180 },
+                      visible: {
+                        scale: 1,
+                        rotate: 0,
+                        transition: {
+                          type: 'spring',
+                          stiffness: 200,
+                          damping: 15,
+                          delay: 0.1,
+                        },
+                      },
+                    }}
                     initial="hidden"
                     animate="visible"
                     className="w-16 h-16 sm:w-20 sm:h-20 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
@@ -354,7 +365,19 @@ const TopUpPageComponent = () => {
               {modalType === 'success' && (
                 <>
                   <motion.div
-                    variants={iconVariants}
+                    variants={{
+                      hidden: { scale: 0, rotate: -180 },
+                      visible: {
+                        scale: 1,
+                        rotate: 0,
+                        transition: {
+                          type: 'spring',
+                          stiffness: 200,
+                          damping: 15,
+                          delay: 0.1,
+                        },
+                      },
+                    }}
                     initial="hidden"
                     animate="visible"
                     className="w-16 h-16 sm:w-20 sm:h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
@@ -375,7 +398,9 @@ const TopUpPageComponent = () => {
                     transition={{ delay: 0.3, type: 'spring' }}
                     className="text-2xl sm:text-3xl font-bold mb-2 text-gray-900"
                   >
-                    {formatCurrency(Number(topUpResult?.balance ?? amount ?? 0))}
+                    {formatCurrency(
+                      Number(topUpResult?.balance ?? amount ?? 0)
+                    )}
                   </motion.p>
                   <motion.p
                     initial={{ opacity: 0 }}
@@ -402,7 +427,19 @@ const TopUpPageComponent = () => {
               {modalType === 'error' && (
                 <>
                   <motion.div
-                    variants={iconVariants}
+                    variants={{
+                      hidden: { scale: 0, rotate: -180 },
+                      visible: {
+                        scale: 1,
+                        rotate: 0,
+                        transition: {
+                          type: 'spring',
+                          stiffness: 200,
+                          damping: 15,
+                          delay: 0.1,
+                        },
+                      },
+                    }}
                     initial="hidden"
                     animate="visible"
                     className="w-16 h-16 sm:w-20 sm:h-20 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"

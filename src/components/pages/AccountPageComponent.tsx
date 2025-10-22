@@ -2,15 +2,20 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks/reduxHooks';
-import { logout, updateProfile, updateProfileImage } from '@/lib/features/auth/authSlice';
+import {
+  logout,
+  updateProfile,
+  updateProfileImage,
+} from '@/lib/features/auth/authSlice';
 
 export default function AccountPageComponent() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { user, isUpdatingProfile, error, successMessage } = useAppSelector((state) => state.auth);
+  const { user, isUpdatingProfile } = useAppSelector((state) => state.auth);
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,6 +25,7 @@ export default function AccountPageComponent() {
   });
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [previewImage, setPreviewImage] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -49,48 +55,43 @@ export default function AccountPageComponent() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (max 100KB)
-      if (file.size > 100 * 1024) {
-        alert('Ukuran file maksimal 100KB');
+      const maxSize = 100 * 1024; 
+      if (file.size > maxSize) {
+        setErrorMessage('Ukuran file maksimal 100KB');
+        e.target.value = ''; 
         return;
       }
 
-      // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('File harus berupa gambar');
+        setErrorMessage('File harus berupa gambar');
+        e.target.value = '';
         return;
       }
 
+      setErrorMessage(null);
       setProfileImage(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
-      };
+      reader.onloadend = () => setPreviewImage(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
 
-  const handleEditClick = () => {
-    setIsEditing(true);
-  };
+  const handleEditClick = () => setIsEditing(true);
 
   const handleSaveClick = async () => {
     try {
-      // Update profile image first if changed
       if (profileImage) {
         await dispatch(updateProfileImage(profileImage)).unwrap();
       }
-
-      // Update profile data
       await dispatch(
         updateProfile({
           first_name: formData.first_name,
           last_name: formData.last_name,
         })
       ).unwrap();
-
       setIsEditing(false);
       setProfileImage(null);
+       setErrorMessage(null);
     } catch (error) {
       console.error('Failed to update profile:', error);
     }
@@ -99,6 +100,7 @@ export default function AccountPageComponent() {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setProfileImage(null);
+     setErrorMessage(null);
     if (user) {
       setFormData({
         email: user.email,
@@ -115,41 +117,65 @@ export default function AccountPageComponent() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <motion.div
+      className="min-h-screen bg-white"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex justify-center mb-6">
-          <div className="relative">
-            <div className="w-32 h-32 rounded-full border-4 border-gray-200 overflow-hidden bg-gray-100 flex items-center justify-center">
+        <motion.div
+          className="flex justify-center mb-6"
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          <motion.div
+            className="relative"
+            whileHover={isEditing ? { scale: 1.05 } : {}}
+            transition={{ type: 'spring', stiffness: 200 }}
+          >
+            <div className="w-32 h-32 rounded-full border-4 border-gray-200 overflow-hidden bg-gray-100 flex items-center justify-center shadow-md">
               {previewImage ? (
-                <img
+                <motion.img
                   src={previewImage}
                   alt="Profile"
                   className="w-full h-full object-cover"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.4 }}
                 />
               ) : (
                 <span className="text-5xl">👤</span>
               )}
             </div>
-            {isEditing && (
-              <button
-                onClick={handleImageClick}
-                className="absolute bottom-0 right-0 w-10 h-10 bg-white border-2 border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors"
-              >
-                <svg
-                  className="w-5 h-5 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            <AnimatePresence>
+              {isEditing && (
+                <motion.button
+                  key="edit"
+                  onClick={handleImageClick}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 250 }}
+                  className="absolute cursor-pointer bottom-0 right-0 w-10 h-10 bg-white border-2 border-gray-300 rounded-full flex items-center justify-center hover:bg-gray-50 shadow-lg"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
-              </button>
-            )}
+                  <svg
+                    className="w-5 h-5 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                </motion.button>
+              )}
+            </AnimatePresence>
             <input
               ref={fileInputRef}
               type="file"
@@ -157,17 +183,37 @@ export default function AccountPageComponent() {
               onChange={handleImageChange}
               className="hidden"
             />
-          </div>
-        </div>
-
-        {/* User Name */}
-        <h1 className="text-3xl font-bold text-center mb-12">
+          </motion.div>
+        </motion.div>
+        <AnimatePresence>
+          {errorMessage && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="mb-4 p-3 bg-red-100 text-red-700 border border-red-300 rounded-lg text-sm text-center"
+            >
+              {errorMessage}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <motion.h1
+          className="text-3xl font-bold text-center mb-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
           {user?.first_name} {user?.last_name}
-        </h1>
+        </motion.h1>
 
-        {/* Form */}
-        <div className="space-y-6">
-          {/* Email */}
+        <motion.div
+          className="space-y-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Email
@@ -186,7 +232,6 @@ export default function AccountPageComponent() {
             </div>
           </div>
 
-          {/* First Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Nama Depan
@@ -208,7 +253,6 @@ export default function AccountPageComponent() {
             </div>
           </div>
 
-          {/* Last Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Nama Belakang
@@ -230,42 +274,52 @@ export default function AccountPageComponent() {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          {!isEditing ? (
-            <>
-              <button
-                onClick={handleEditClick}
-                className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-lg transition-colors"
-              >
-                Edit Profil
-              </button>
-              <button
-                onClick={handleLogout}
-                className="w-full border-2 border-red-500 text-red-500 hover:bg-red-50 font-semibold py-3 rounded-lg transition-colors"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={handleSaveClick}
-                disabled={isUpdatingProfile}
-                className="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isUpdatingProfile ? 'Menyimpan...' : 'Simpan'}
-              </button>
-              <button
-                onClick={handleCancelEdit}
-                disabled={isUpdatingProfile}
-                className="w-full border-2 border-red-500 text-red-500 hover:bg-red-50 font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
-              >
-                Batalkan
-              </button>
-            </>
-          )}
-        </div>
+          <motion.div
+            className="space-y-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            {!isEditing ? (
+              <>
+                <motion.button
+                  onClick={handleEditClick}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full bg-red-500 cursor-pointer hover:bg-red-600 text-white font-semibold py-3 rounded-lg shadow-sm transition-colors"
+                >
+                  Edit Profil
+                </motion.button>
+                <motion.button
+                  onClick={handleLogout}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full border-2 cursor-pointer border-red-500 text-red-500 hover:bg-red-50 font-semibold py-3 rounded-lg transition-colors"
+                >
+                  Logout
+                </motion.button>
+              </>
+            ) : (
+              <>
+                <motion.button
+                  onClick={handleSaveClick}
+                  disabled={isUpdatingProfile}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full bg-red-500 cursor-pointer hover:bg-red-600 text-white font-semibold py-3 rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isUpdatingProfile ? 'Menyimpan...' : 'Simpan'}
+                </motion.button>
+                <motion.button
+                  onClick={handleCancelEdit}
+                  whileTap={{ scale: 0.97 }}
+                  disabled={isUpdatingProfile}
+                  className="w-full border-2 cursor-pointer border-red-500 text-red-500 hover:bg-red-50 font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  Batalkan
+                </motion.button>
+              </>
+            )}
+          </motion.div>
+        </motion.div>
       </main>
-    </div>
+    </motion.div>
   );
 }
