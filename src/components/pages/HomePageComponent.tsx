@@ -1,11 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useSelector, useDispatch } from 'react-redux';
-import { useEffect } from 'react';
-import { RootState, AppDispatch } from '@/lib/config/reduxStore';
-import { fetchBanners, fetchServices } from '@/lib/features/module/moduleSlice';
-import { fetchBalance } from '@/lib/features/transaction/transactionSlice';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/config/reduxStore';
 import Link from 'next/link';
 import ProfileBalanceCard from '../ui/cards/ProfileBalanceCard';
 
@@ -51,14 +48,9 @@ const bannerColors = [
 ];
 
 export default function HomePageComponent(): React.JSX.Element {
-  const dispatch = useDispatch<AppDispatch>();
   const { banners, services, isLoadingBanners, isLoadingServices } = useSelector(
     (state: RootState) => state.module
   );
-  useEffect(() => {
-    dispatch(fetchBanners());
-    dispatch(fetchServices());
-  }, [dispatch]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -73,15 +65,14 @@ export default function HomePageComponent(): React.JSX.Element {
           ) : services.length > 0 ? (
             <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-4">
               {services.map((service) => {
-                // Simple check for valid image
                 const showImage = service.service_icon && 
                                  service.service_icon !== 'null' && 
                                  !service.service_icon.includes('/null');
                 
                 return (
-                  <Link  key={service.service_code} href={`/payment/order/${service.service_code}`}>
+                  <Link  key={service.service_code} className='cursor-pointer' href={`/payment/order/${service.service_code}`}>
                    <button
-                    className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex flex-col cursor-pointer items-center gap-2 p-3 rounded-lg hover:bg-gray-100 transition-colors"
                   >
                     <div
                       className={`w-14 h-14 ${
@@ -116,7 +107,6 @@ export default function HomePageComponent(): React.JSX.Element {
           )}
         </div>
 
-        {/* Banner/Promo Section */}
         <div>
           <h3 className="text-lg font-semibold text-black mb-4">
             Temukan promo menarik
@@ -128,7 +118,6 @@ export default function HomePageComponent(): React.JSX.Element {
           ) : banners.length > 0 ? (
             <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
               {banners.map((banner, index) => {
-                // Simple check for valid image
                 const showImage = banner.banner_image && 
                                  banner.banner_image !== 'null' && 
                                  !banner.banner_image.includes('/null');

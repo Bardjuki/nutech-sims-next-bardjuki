@@ -17,12 +17,6 @@ interface ApiResponse {
   } | null;
 }
 
-interface ProfileResponse {
-  status: number;
-  message: string;
-  data: User;
-}
-
 interface ErrorResponse {
   status: number;
   message: string;
@@ -58,7 +52,6 @@ const initialState: AuthState = {
   successMessage: null,
 };
 
-// Login async thunk
 export const login = createAsyncThunk<
   LoginResponse,
   { email: string; password: string },
@@ -75,10 +68,8 @@ export const login = createAsyncThunk<
         }
         setAuthToken(response.data?.token);
         
-        // Fetch user profile
         const profileResponse = await memberApi.getProfile();
 
-        // Return both token and user
         return {
           token: response.data?.token || '',
           user: profileResponse.data,
@@ -106,7 +97,6 @@ export const login = createAsyncThunk<
   }
 );
 
-// Register async thunk
 export const register = createAsyncThunk<
   ApiResponse,
   {
@@ -166,7 +156,6 @@ export const register = createAsyncThunk<
   }
 );
 
-// Update profile async thunk
 export const updateProfile = createAsyncThunk<
   User,
   { first_name: string; last_name: string },
@@ -202,7 +191,6 @@ export const updateProfile = createAsyncThunk<
   }
 );
 
-// Update profile image async thunk
 export const updateProfileImage = createAsyncThunk<
   User,
   File,
@@ -238,16 +226,14 @@ export const updateProfileImage = createAsyncThunk<
   }
 );
 
-// Logout async thunk
 export const logoutAsync = createAsyncThunk('auth/logout', async () => {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('token');
   }
-  setAuthToken(null); // Clear the auth token
+  setAuthToken(null); 
   return null;
 });
 
-// Check auth async thunk
 export const checkAuth = createAsyncThunk<
   CheckAuthResponse,
   void,
@@ -265,7 +251,7 @@ export const checkAuth = createAsyncThunk<
         return rejectWithValue('No token found');
       }
 
-      setAuthToken(token); // Set token before making request
+      setAuthToken(token);
       const response = await memberApi.getProfile();
 
       if (response.status === 0) {
@@ -317,7 +303,6 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Login
     builder
       .addCase(login.pending, (state) => {
         state.isLoading = true;
@@ -336,7 +321,6 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
       });
 
-    // Register
     builder
       .addCase(register.pending, (state) => {
         state.isLoading = true;
@@ -372,8 +356,6 @@ const authSlice = createSlice({
           state.error = 'Terjadi kesalahan. Silakan coba lagi.';
         }
       });
-
-    // Update Profile
     builder
       .addCase(updateProfile.pending, (state) => {
         state.isUpdatingProfile = true;
@@ -392,7 +374,6 @@ const authSlice = createSlice({
         state.successMessage = null;
       });
 
-    // Update Profile Image
     builder
       .addCase(updateProfileImage.pending, (state) => {
         state.isUpdatingProfile = true;
@@ -411,7 +392,6 @@ const authSlice = createSlice({
         state.successMessage = null;
       });
 
-    // Logout
     builder.addCase(logoutAsync.fulfilled, (state) => {
       state.user = null;
       state.token = null;
@@ -420,7 +400,6 @@ const authSlice = createSlice({
       state.successMessage = null;
     });
 
-    // Check Auth
     builder
       .addCase(checkAuth.fulfilled, (state, action) => {
         state.user = action.payload.user;

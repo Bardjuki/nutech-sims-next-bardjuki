@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, ChangeEvent } from 'react';
-import { Wallet, CreditCard, X, Check } from 'lucide-react';
+import { Wallet, CreditCard, X, Check, AlertCircle } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks/reduxHooks';
 import { topUpBalance } from '@/lib/features/transaction/transactionSlice';
 import ProfileBalanceCard from '../ui/cards/ProfileBalanceCard';
@@ -9,21 +9,25 @@ import { useRouter } from 'next/navigation';
 
 const TopUpPageComponent = () => {
   const dispatch = useAppDispatch();
-  const {  isTopingUp, topUpResult, successMessage, error } = useAppSelector(
+  const { isTopingUp, topUpResult, successMessage, error } = useAppSelector(
     (state) => state.transaction
   );
   const [amount, setAmount] = useState<string>('');
+  const [validationError, setValidationError] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
   const router = useRouter();
+  
+  const MIN_AMOUNT = 10000;
+  const MAX_AMOUNT = 1000000;
   const quickAmounts = [10000, 20000, 50000, 100000, 250000, 500000];
 
- 
   useEffect(() => {
     if (successMessage) {
       setModalType('success');
       setShowModal(true);
       setAmount('');
+      setValidationError('');
       setTimeout(() => {
       }, 3000);
     }
@@ -38,19 +42,49 @@ const TopUpPageComponent = () => {
     }
   }, [error]);
 
+  const validateAmount = (value: string): string => {
+    if (!value) {
+      return 'Nominal tidak boleh kosong';
+    }
+    
+    const numValue = parseInt(value);
+    
+    if (numValue < MIN_AMOUNT) {
+      return `Nominal minimum adalah ${formatCurrency(MIN_AMOUNT)}`;
+    }
+    
+    if (numValue > MAX_AMOUNT) {
+      return `Nominal maksimum adalah ${formatCurrency(MAX_AMOUNT)}`;
+    }
+    
+    return '';
+  };
+
   const handleAmountChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const value = e.target.value.replace(/\D/g, '');
     setAmount(value);
+    
+    if (value) {
+      const error = validateAmount(value);
+      setValidationError(error);
+    } else {
+      setValidationError('');
+    }
   };
 
-  const handleQuickAmount = (value : number) => {
+  const handleQuickAmount = (value: number) => {
     setAmount(value.toString());
+    setValidationError(''); // Clear any validation errors
   };
 
   const handleTopUpClick = () => {
-    if (!amount || parseInt(amount) < 10000) {
+    const error = validateAmount(amount);
+    
+    if (error) {
+      setValidationError(error);
       return;
     }
+    
     setModalType('confirm');
     setShowModal(true);
   };
@@ -67,6 +101,7 @@ const TopUpPageComponent = () => {
         setModalType('success');
         setShowModal(true);
         setAmount('');
+        setValidationError('');
       }, 1000);
     } catch (err) {
       console.error('Top up failed:', err);
@@ -80,17 +115,18 @@ const TopUpPageComponent = () => {
     }
   };
 
+  const isAmountValid = amount && !validationError;
+
   return (
     <div className="min-h-screen bg-white">
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ProfileBalanceCard/>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="">
-              <p className="text-sm text-gray-600 mb-2">Silahkan masukan</p>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Nominal Top Up</h2>
-
-              <div className="space-y-4">
+        <ProfileBalanceCard />
+        <div> <p className="text-sm text-gray-600 mb-2">Silahkan masukan</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Nominal Top Up</h2></div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <div className="space-y-4">
+              <div>
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                     <CreditCard size={20} />
@@ -100,40 +136,68 @@ const TopUpPageComponent = () => {
                     value={amount}
                     onChange={handleAmountChange}
                     placeholder="masukan nominal Top Up"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className={`w-full pl-10 pr-4 py-3 border rounded focus:outline-none focus:ring-2 transition-colors ${
+                      validationError
+                        ? 'border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:ring-red-500'
+                    }`}
                   />
                 </div>
-
-                <button
-                  onClick={handleTopUpClick}
-                  disabled={!amount || parseInt(amount) < 10000 || isTopingUp}
-                  className={`w-full py-3 rounded font-medium transition-colors ${
-                    amount && parseInt(amount) >= 10000 && !isTopingUp
-                      ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {isTopingUp ? 'Processing...' : 'Top Up'}
-                </button>
+                
+                {/* Validation Error Message */}
+                {validationError && (
+                  <div className="flex items-center gap-2 mt-2 text-red-600 text-sm">
+                    <AlertCircle size={16} />
+                    <span>{validationError}</span>
+                  </div>
+                )}
+                
+                {/* Helper Text */}
+                {!validationError && !amount && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    Minimum {formatCurrency(MIN_AMOUNT)} - Maksimum {formatCurrency(MAX_AMOUNT)}
+                  </p>
+                )}
               </div>
+
+              <button
+                onClick={handleTopUpClick}
+                disabled={!isAmountValid || isTopingUp}
+                className={`w-full py-3 rounded font-medium transition-colors ${
+                  isAmountValid && !isTopingUp
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {isTopingUp ? 'Processing...' : 'Top Up'}
+              </button>
             </div>
-             <div className="grid grid-cols-3 gap-3">
+            </div>
+          
+          <div>
+            <p className="text-sm text-gray-600 mb-4">Nominal Cepat</p>
+            <div className="grid grid-cols-3 gap-3">
               {quickAmounts.map((value) => (
                 <button
                   key={value}
                   onClick={() => handleQuickAmount(value)}
-                  className="py-3 px-4 border border-gray-300 rounded hover:border-red-500 hover:bg-red-50 transition-colors text-sm font-medium"
+                  disabled={value > MAX_AMOUNT}
+                  className={`py-3 px-4 border rounded transition-colors text-sm font-medium ${
+                    value > MAX_AMOUNT
+                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 hover:border-red-500 hover:bg-red-50 cursor-pointer'
+                  } ${amount === value.toString() ? 'border-red-500 bg-red-50' : ''}`}
                 >
                   {formatCurrency(value)}
                 </button>
               ))}
+            </div>
           </div>
-
         </div>
       </main>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black-100 bg-opacity-5 flex items-center justify-center p-4 z-50" onClick={handleCloseModal}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={handleCloseModal}>
           <div className="bg-white rounded-lg p-6 max-w-sm w-full text-center" onClick={(e) => e.stopPropagation()}>
             {modalType === 'confirm' && (
               <>

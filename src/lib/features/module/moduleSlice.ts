@@ -18,7 +18,6 @@ const initialState: ModuleState = {
   error: null,
 };
 
-// Fetch banners async thunk
 export const fetchBanners = createAsyncThunk<
   Banner[],
   void,
@@ -46,7 +45,6 @@ export const fetchBanners = createAsyncThunk<
           message?: string;
         };
 
-        // Handle token expiration or invalid token
         if (axiosError.response?.data?.status === 108) {
           return rejectWithValue('Token tidak valid atau kadaluwarsa');
         }
@@ -60,7 +58,6 @@ export const fetchBanners = createAsyncThunk<
   }
 );
 
-// Fetch services async thunk
 export const fetchServices = createAsyncThunk<
   Service[],
   void,
@@ -88,7 +85,6 @@ export const fetchServices = createAsyncThunk<
           message?: string;
         };
 
-        // Handle token expiration or invalid token
         if (axiosError.response?.data?.status === 108) {
           return rejectWithValue('Token tidak valid atau kadaluwarsa');
         }
@@ -102,7 +98,6 @@ export const fetchServices = createAsyncThunk<
   }
 );
 
-// Fetch both banners and services together
 export const fetchModuleData = createAsyncThunk<
   void,
   void,
@@ -135,7 +130,6 @@ const moduleSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Fetch Banners
     builder
       .addCase(fetchBanners.pending, (state) => {
         state.isLoadingBanners = true;
@@ -151,7 +145,6 @@ const moduleSlice = createSlice({
         state.error = action.payload || 'Failed to fetch banners';
       });
 
-    // Fetch Services
     builder
       .addCase(fetchServices.pending, (state) => {
         state.isLoadingServices = true;
@@ -167,7 +160,6 @@ const moduleSlice = createSlice({
         state.error = action.payload || 'Failed to fetch services';
       });
 
-    // Fetch Module Data (both)
     builder
       .addCase(fetchModuleData.pending, (state) => {
         state.isLoadingBanners = true;

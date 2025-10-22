@@ -1,11 +1,9 @@
-// API Response wrapper
 export interface ApiResponse<T = unknown> {
   status: number;
   message: string;
   data: T;
 }
 
-// Auth types
 export interface LoginRequest {
   email: string;
   password: string;
@@ -27,7 +25,6 @@ export interface RegisterResponse {
   message?: string;
 }
 
-// User Profile types
 export interface UserProfile {
   email: string;
   first_name: string;
@@ -44,7 +41,6 @@ export interface UpdateProfileImageRequest {
   file: File;
 }
 
-// Balance & Transaction types
 export interface Balance {
   balance: number;
 }
@@ -96,7 +92,6 @@ export interface TransactionHistoryResponse {
   records: Transaction[];
 }
 
-// Top Up types
 export interface TopUpRequest {
   top_up_amount: number;
 }

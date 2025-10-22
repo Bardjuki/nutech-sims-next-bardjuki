@@ -1,5 +1,6 @@
 import {  RootState } from '@/lib/config/reduxStore';
 import { formatCurrency } from '@/lib/utils/numberUtils';
+import { Eye, EyeClosed } from 'lucide-react';
 import Image from 'next/image';
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux';
@@ -28,7 +29,7 @@ const { balance, isLoadingBalance } = useSelector(
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
              <div className="flex flex-col justify-center">
-               <div className="flex items-center gap-4 mb-4">
+               <div className="flex flex-col items-start gap-4 mb-4">
                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 border-2 border-gray-300">
                    <Image
                      src={profileImage}
@@ -67,11 +68,11 @@ const { balance, isLoadingBalance } = useSelector(
                  )}
                  <button
                    onClick={() => setShowBalance(!showBalance)}
-                   className="text-sm flex items-center gap-1 hover:underline"
+                   className="text-sm flex cursor-pointer items-center gap-1 hover:underline"
                    disabled={isLoadingBalance}
                  >
                    {showBalance ? 'Sembunyikan Saldo' : 'Lihat Saldo'}
-                   <span>{showBalance ? '🙈' : '👁️'}</span>
+                   {showBalance ? <EyeClosed size={20} /> : <Eye  size={20}/>}
                  </button>
                </div>
              </div>

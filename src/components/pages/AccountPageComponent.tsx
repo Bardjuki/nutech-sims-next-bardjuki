@@ -111,7 +111,7 @@ export default function AccountPageComponent() {
 
   const handleLogout = () => {
     dispatch(logout());
-    router.push('/login');
+    router.push('/auth/login');
   };
 
   return (
