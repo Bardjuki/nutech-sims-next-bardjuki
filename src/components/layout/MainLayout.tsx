@@ -33,6 +33,8 @@ export default function MainLayout({
       dispatch(fetchBalance());
     }
   }, [dispatch, isAuthenticated, token]);
+
+  
   return (
     <div className="flex flex-col min-h-screen">
       {isPublicRoute ? null : <Navbar />}
