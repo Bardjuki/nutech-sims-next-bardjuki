@@ -8,7 +8,8 @@ import { fetchBalance } from '@/lib/features/transaction/transactionSlice';
 import { fetchBanners, fetchServices } from '@/lib/features/module/moduleSlice';
 import { checkAuth } from '@/lib/features/auth/authSlice';
 
-const PUBLIC_ROUTES = ['/auth/login', '/auth/register'];
+const AUTH_ROUTES = ['/auth/login', '/auth/register'];
+const PUBLIC_PATHS = ['developer'];
 export default function MainLayout({
   children,
 }: {
@@ -17,9 +18,9 @@ export default function MainLayout({
   const dispatch = useAppDispatch();
   const pathname = usePathname();
   const { isAuthenticated, token } = useAppSelector((state) => state.auth);
-  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+  // const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+  const isPublicRoute = PUBLIC_PATHS.some((path) => pathname.startsWith(`/${path}`)) || AUTH_ROUTES?.includes(pathname)
   useEffect(() => {
-    const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
     if (!isPublicRoute && !isAuthenticated) {
       dispatch(checkAuth());
     }
