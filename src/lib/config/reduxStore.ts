@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../features/auth/authSlice';
+import developerReducer from '../features/developer/developerSlice';
 import transactionReducer from '../features/transaction/transactionSlice';
 import moduleReducer from '../features/module/moduleSlice';
 export const makeStore = () => {
@@ -8,6 +9,7 @@ export const makeStore = () => {
       auth: authReducer,
       transaction: transactionReducer,
       module: moduleReducer,
+      developer: developerReducer,
     },
   });
 };
